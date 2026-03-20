@@ -1,4 +1,4 @@
-import { ParsedAlertContext } from "../api/protocol";
+import { ParsedAlertContext, ParserRules } from "../api/protocol";
 
 const ALERT_ID_SELECTORS = ["[data-alert-id]", "#alert-id", ".alert-id"];
 const TITLE_SELECTORS = ["h1", "[data-alert-title]", ".alert-title"];
@@ -33,22 +33,30 @@ function normalizeSeverity(value?: string): ParsedAlertContext["severity"] {
   return "low";
 }
 
-export function parseAlertContext(document: Document): ParsedAlertContext {
+export function parseAlertContext(document: Document, rules?: ParserRules): ParsedAlertContext {
+  const alertIdSelectors = rules?.alertId?.length ? rules.alertId : ALERT_ID_SELECTORS;
+  const titleSelectors = rules?.title?.length ? rules.title : TITLE_SELECTORS;
+  const severitySelectors = rules?.severity?.length ? rules.severity : SEVERITY_SELECTORS;
+  const sourceIpSelectors = rules?.sourceIp?.length ? rules.sourceIp : SOURCE_IP_SELECTORS;
+  const assetSelectors = rules?.asset?.length ? rules.asset : ASSET_SELECTORS;
+  const userSelectors = rules?.user?.length ? rules.user : USER_SELECTORS;
+  const timestampSelectors = rules?.timestamp?.length ? rules.timestamp : TIMESTAMP_SELECTORS;
+
   const alertId =
-    getTextBySelectors(document, ALERT_ID_SELECTORS) ??
+    getTextBySelectors(document, alertIdSelectors) ??
     `unknown-${Date.now().toString(36)}`;
 
-  const title = getTextBySelectors(document, TITLE_SELECTORS);
-  const severityRaw = getTextBySelectors(document, SEVERITY_SELECTORS);
+  const title = getTextBySelectors(document, titleSelectors);
+  const severityRaw = getTextBySelectors(document, severitySelectors);
 
   return {
     alertId,
     title,
     severity: normalizeSeverity(severityRaw),
-    sourceIp: getTextBySelectors(document, SOURCE_IP_SELECTORS),
-    asset: getTextBySelectors(document, ASSET_SELECTORS),
-    user: getTextBySelectors(document, USER_SELECTORS),
-    timestamp: getTextBySelectors(document, TIMESTAMP_SELECTORS),
+    sourceIp: getTextBySelectors(document, sourceIpSelectors),
+    asset: getTextBySelectors(document, assetSelectors),
+    user: getTextBySelectors(document, userSelectors),
+    timestamp: getTextBySelectors(document, timestampSelectors),
     rawText: (document.body?.innerText ?? "").slice(0, 4000),
   };
 }

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SafeOps SidePanel</title>
+    <link rel="stylesheet" href="ui.css" />
+  </head>
+  <body>
+    <div class="card">
+      <h1>决策侧边栏</h1>
+      <p class="small">上下文、AI研判和执行建议统一展示。</p>
+    </div>
+
+    <div class="card">
+      <h2>Context 区域</h2>
+      <pre id="context-pre">正在加载上下文...</pre>
+    </div>
+
+    <div class="card">
+      <h2>AI Chat 区域</h2>
+      <div id="chat-stream" class="small">正在等待分析结果...</div>
+    </div>
+
+    <div class="card">
+      <h2>Action 区域</h2>
+      <div id="action-group" class="actions"></div>
+      <p id="action-status" class="small" style="margin-top:8px"></p>
+    </div>
+
+    <div id="action-modal" class="modal-mask">
+      <div class="modal">
+        <h3>ActionPanel 二次确认</h3>
+        <p id="confirm-text" class="small"></p>
+        <div class="actions" style="margin-top:10px">
+          <button id="confirm-action" class="primary">确认执行</button>
+          <button id="cancel-action">取消</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="sidepanel.js"></script>
+  </body>
+</html>

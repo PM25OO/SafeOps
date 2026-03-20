@@ -39,4 +39,26 @@ describe("parseAlertContext", () => {
     const result = parseAlertContext(dom.window.document);
     expect(result.severity).toBe("low");
   });
+
+  test("supports custom parser rules", () => {
+    const dom = new JSDOM(`
+      <html>
+        <body>
+          <div class="vendor-alert-id">ALT-2026-0099</div>
+          <div class="vendor-severity">high</div>
+          <div class="vendor-source">9.9.9.9</div>
+        </body>
+      </html>
+    `);
+
+    const result = parseAlertContext(dom.window.document, {
+      alertId: [".vendor-alert-id"],
+      severity: [".vendor-severity"],
+      sourceIp: [".vendor-source"],
+    });
+
+    expect(result.alertId).toBe("ALT-2026-0099");
+    expect(result.severity).toBe("high");
+    expect(result.sourceIp).toBe("9.9.9.9");
+  });
 });

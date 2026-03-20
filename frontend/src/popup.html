@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SafeOps Popup</title>
+    <link rel="stylesheet" href="ui.css" />
+  </head>
+  <body>
+    <div class="card">
+      <h1>SafeOps 控制台</h1>
+      <div class="row">
+        <span>自动监听</span>
+        <label class="row" style="margin:0">
+          <input id="plugin-toggle" type="checkbox" />
+          <span id="toggle-label">已启用</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>状态看板</h2>
+      <div class="kv">
+        <span>后端连接</span>
+        <span><i id="backend-dot" class="status-dot status-bad"></i><span id="backend-status">离线</span></span>
+      </div>
+      <div class="kv">
+        <span>模型状态</span>
+        <span><i id="llm-dot" class="status-dot status-bad"></i><span id="llm-status">离线</span></span>
+      </div>
+      <div class="grid-2" style="margin-top:8px">
+        <div class="metric">
+          <div class="label">今日已处理</div>
+          <div id="processed-count" class="value">0</div>
+        </div>
+        <div class="metric">
+          <div class="label">今日已拦截</div>
+          <div id="blocked-count" class="value">0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="actions">
+        <button id="refresh-btn" class="primary">刷新状态</button>
+        <button id="open-options">配置中心</button>
+        <button id="open-audit">历史审计日志</button>
+      </div>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

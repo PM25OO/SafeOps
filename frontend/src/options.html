@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SafeOps Options</title>
+    <link rel="stylesheet" href="ui.css" />
+  </head>
+  <body>
+    <div class="card">
+      <h1>配置中心</h1>
+      <p class="small">设置后端连接、操作白名单与DOM解析规则。保存后自动生效。</p>
+    </div>
+
+    <div class="card">
+      <h2>基础设置 (API Config)</h2>
+      <label for="backend-url">后端服务地址</label>
+      <input id="backend-url" type="text" placeholder="http://localhost:8000" />
+      <label for="api-key" style="margin-top:10px">API Key (可选)</label>
+      <input id="api-key" type="password" placeholder="X-API-Key" />
+    </div>
+
+    <div class="card">
+      <h2>操作白名单 (Allowlist)</h2>
+      <div id="allowlist-group" class="grid-2"></div>
+    </div>
+
+    <div class="card">
+      <h2>DOM 解析规则 (Parser Rules)</h2>
+      <p class="small">JSON格式，字段支持: alertId/title/severity/sourceIp/asset/user/timestamp（每个字段为选择器数组）。</p>
+      <textarea id="parser-rules"></textarea>
+      <div class="actions" style="margin-top:8px">
+        <button id="import-json">导入JSON文件</button>
+        <button id="format-json">格式化</button>
+      </div>
+      <input id="import-file" type="file" accept="application/json" style="display:none" />
+    </div>
+
+    <div class="card">
+      <div class="actions">
+        <button id="save-btn" class="primary">保存配置</button>
+        <button id="test-btn">测试后端连接</button>
+      </div>
+      <p id="status-text" class="small" style="margin-top:8px"></p>
+    </div>
+
+    <script src="options.js"></script>
+  </body>
+</html>

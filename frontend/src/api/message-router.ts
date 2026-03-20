@@ -2,6 +2,7 @@ import { ExtensionMessage, RouterResponse } from "./protocol";
 
 export type MessageHandler = (
   message: ExtensionMessage,
+  sender?: chrome.runtime.MessageSender,
 ) => Promise<unknown> | unknown;
 
 export class MessageRouter {
@@ -11,7 +12,10 @@ export class MessageRouter {
     this.handlers.set(type, handler);
   }
 
-  async handle(message: ExtensionMessage): Promise<RouterResponse> {
+  async handle(
+    message: ExtensionMessage,
+    sender?: chrome.runtime.MessageSender,
+  ): Promise<RouterResponse> {
     const handler = this.handlers.get(message.type);
     if (!handler) {
       return {
@@ -21,7 +25,7 @@ export class MessageRouter {
     }
 
     try {
-      const data = await handler(message);
+      const data = await handler(message, sender);
       return { ok: true, data };
     } catch (error) {
       return {

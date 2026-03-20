@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SafeOps Audit</title>
+    <link rel="stylesheet" href="ui.css" />
+  </head>
+  <body>
+    <div class="card">
+      <div class="row">
+        <h1>历史审计日志</h1>
+        <button id="refresh-audit">刷新</button>
+      </div>
+      <p class="small">展示后端最近审计事件（最多50条）。</p>
+    </div>
+
+    <div class="card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>时间</th>
+            <th>告警ID</th>
+            <th>风险分</th>
+            <th>建议</th>
+            <th>审计ID</th>
+          </tr>
+        </thead>
+        <tbody id="audit-tbody"></tbody>
+      </table>
+      <p id="audit-empty" class="small" style="display:none">暂无审计数据。</p>
+    </div>
+
+    <script src="audit.js"></script>
+  </body>
+</html>
