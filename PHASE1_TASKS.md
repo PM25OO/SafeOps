@@ -48,6 +48,16 @@
 | INT-1.5.2 | 演示数据集+Docker Compose | P0 | 3h | ⬜ | - | 一键启动 |
 | INT-1.5.3 | 性能基准记录+优化报告 | P1 | 2h | ⬜ | - | baseline metrics |
 
+## Sprint 1.6: 插件前端交互优化 (新增任务, 目标: 2天)
+
+| ID | 任务 | 优先级 | 预计工时 | 状态 | 负责人 | 备注 |
+|----|------|--------|---------|------|--------|------|
+| FE-1.6.1 | 插件主页Popup控制台(开关/状态看板/快捷入口) | P0 | 3h | ✅ | Copilot | 包含模型状态与今日统计 |
+| FE-1.6.2 | Options配置中心(API配置/Allowlist/Parser Rules导入) | P0 | 4h | ✅ | Copilot | 支持JSON规则导入与格式化 |
+| FE-1.6.3 | 悬浮球FloatingBall(贴边隐藏/高危高亮/拖拽) | P0 | 3h | ✅ | Copilot | 双击/右键可打开侧边栏 |
+| FE-1.6.4 | SidePanel决策视图(Context/AI Chat/Action) | P0 | 4h | ✅ | Copilot | ActionPanel二次确认拦截 |
+| FE-1.6.X | 新增前端入口联调与构建导出验证 | P1 | 2h | ✅ | Copilot | 构建产物含popup/options/sidepanel/audit |
+
 ---
 
 ## 关键里程碑
