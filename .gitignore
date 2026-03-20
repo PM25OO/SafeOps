@@ -6,6 +6,7 @@ __pycache__/
 .coverage
 htmlcov/
 backend/.venv/
+backend/audit_logs/
 
 # Node
 node_modules/

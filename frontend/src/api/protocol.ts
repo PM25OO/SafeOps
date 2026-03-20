@@ -6,6 +6,7 @@ export interface ParsedAlertContext {
   severity: "low" | "medium" | "high" | "critical";
   sourceIp?: string;
   asset?: string;
+  user?: string;
   timestamp?: string;
   rawText: string;
 }

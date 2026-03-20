@@ -30,6 +30,7 @@ router.register("ANALYZE_ALERT", async (message: ExtensionMessage) => {
         severity: payload.severity,
         source_ip: payload.sourceIp,
         asset: payload.asset,
+        user: payload.user,
         timestamp: payload.timestamp,
         description: payload.rawText,
       },

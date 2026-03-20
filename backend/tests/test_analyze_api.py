@@ -31,3 +31,6 @@ def test_analyze_endpoint() -> None:
     body = response.json()
     assert body["risk_score"] >= 60
     assert body["recommendation"] in {"manual_review", "block_and_isolate"}
+    assert body["ai_decision"] is not None
+    assert body["policy_decision"] is not None
+    assert body["audit_id"].startswith("AUD-")

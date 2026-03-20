@@ -26,7 +26,24 @@ class RuleMatch(BaseModel):
     reason: str
 
 
+class AIDecision(BaseModel):
+    summary: str
+    confidence: float = Field(ge=0.0, le=1.0)
+    suggested_action: Literal["monitor", "manual_review", "block_and_isolate"]
+    reasoning: str
+
+
+class PolicyDecision(BaseModel):
+    policy_id: str
+    allow_execute: bool
+    requires_human_confirm: bool
+    reason: str
+
+
 class AnalyzeResponse(BaseModel):
     matched_rules: list[RuleMatch]
     risk_score: int = Field(ge=0, le=100)
-    recommendation: str
+    recommendation: Literal["monitor", "manual_review", "block_and_isolate"]
+    ai_decision: AIDecision | None = None
+    policy_decision: PolicyDecision | None = None
+    audit_id: str | None = None

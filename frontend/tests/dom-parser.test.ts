@@ -11,6 +11,7 @@ describe("parseAlertContext", () => {
           <span data-severity="critical"></span>
           <span data-source-ip="1.2.3.4"></span>
           <span data-asset="prod-web-01"></span>
+          <span data-user="admin"></span>
           <time>2026-03-20T10:00:00Z</time>
         </body>
       </html>
@@ -22,6 +23,7 @@ describe("parseAlertContext", () => {
     expect(result.severity).toBe("critical");
     expect(result.sourceIp).toBe("1.2.3.4");
     expect(result.asset).toBe("prod-web-01");
+    expect(result.user).toBe("admin");
   });
 
   test("falls back to low severity for unknown value", () => {

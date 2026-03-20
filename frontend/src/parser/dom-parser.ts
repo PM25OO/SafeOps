@@ -5,6 +5,7 @@ const TITLE_SELECTORS = ["h1", "[data-alert-title]", ".alert-title"];
 const SEVERITY_SELECTORS = ["[data-severity]", ".severity", "#severity"];
 const SOURCE_IP_SELECTORS = ["[data-source-ip]", ".source-ip", "#source-ip"];
 const ASSET_SELECTORS = ["[data-asset]", ".asset", "#asset"];
+const USER_SELECTORS = ["[data-user]", ".user", "#user", ".username", "#username"];
 const TIMESTAMP_SELECTORS = ["time", "[data-timestamp]", ".timestamp"];
 
 function getTextBySelectors(document: Document, selectors: string[]): string | undefined {
@@ -46,6 +47,7 @@ export function parseAlertContext(document: Document): ParsedAlertContext {
     severity: normalizeSeverity(severityRaw),
     sourceIp: getTextBySelectors(document, SOURCE_IP_SELECTORS),
     asset: getTextBySelectors(document, ASSET_SELECTORS),
+    user: getTextBySelectors(document, USER_SELECTORS),
     timestamp: getTextBySelectors(document, TIMESTAMP_SELECTORS),
     rawText: (document.body?.innerText ?? "").slice(0, 4000),
   };
