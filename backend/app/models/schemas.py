@@ -44,6 +44,7 @@ class AnalyzeResponse(BaseModel):
     matched_rules: list[RuleMatch]
     risk_score: int = Field(ge=0, le=100)
     recommendation: Literal["monitor", "manual_review", "block_and_isolate"]
+    suggested_actions: list[str] = Field(default_factory=list)
     ai_decision: AIDecision | None = None
     policy_decision: PolicyDecision | None = None
     audit_id: str | None = None

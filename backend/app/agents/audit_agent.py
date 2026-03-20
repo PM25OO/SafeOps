@@ -32,3 +32,19 @@ class AuditAgent:
         with self.log_path.open("a", encoding="utf-8") as fp:
             fp.write(json.dumps(event, ensure_ascii=False) + "\n")
         return audit_id
+
+    def read_recent(self, limit: int = 20) -> list[dict[str, object]]:
+        if limit <= 0:
+            return []
+
+        if not self.log_path.exists():
+            return []
+
+        lines = self.log_path.read_text(encoding="utf-8").splitlines()
+        events: list[dict[str, object]] = []
+        for line in reversed(lines[-limit:]):
+            try:
+                events.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+        return list(reversed(events))

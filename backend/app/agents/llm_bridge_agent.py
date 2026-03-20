@@ -17,6 +17,21 @@ class LLMBridgeAgent:
         self.model = os.getenv("QWEN_MODEL", "qwen-plus")
         self.timeout_seconds = float(os.getenv("LLM_TIMEOUT_SECONDS", "8"))
 
+    def health_summary(self) -> dict[str, object]:
+        if not self.api_key:
+            return {
+                "llm_connected": False,
+                "mode": "mock",
+                "reason": "QWEN_API_KEY not configured",
+                "model": self.model,
+            }
+        return {
+            "llm_connected": True,
+            "mode": "qwen",
+            "reason": "QWEN_API_KEY detected",
+            "model": self.model,
+        }
+
     def enhance(self, payload: AlertPayload, rule_result: AnalyzeResponse) -> AIDecision:
         if not self.api_key:
             return self._mock_decision(rule_result)

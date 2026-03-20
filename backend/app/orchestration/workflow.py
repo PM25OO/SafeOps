@@ -63,6 +63,7 @@ class AnalysisWorkflow:
 
         policy_decision = self.policy_agent.evaluate(state["request"].payload, response)
         response.policy_decision = policy_decision
+        response.suggested_actions = self._build_suggested_actions(response.recommendation)
         return {"request": state["request"], "response": response, "audit_id": state["audit_id"]}
 
     def _run_audit(self, state: AnalyzeState) -> AnalyzeState:
@@ -80,3 +81,16 @@ class AnalysisWorkflow:
         if response is None:
             raise RuntimeError("Analysis workflow failed to produce response")
         return response
+
+    def llm_health(self) -> dict[str, object]:
+        return self.llm_bridge.health_summary()
+
+    def recent_audits(self, limit: int = 20) -> list[dict[str, object]]:
+        return self.audit_agent.read_recent(limit=limit)
+
+    def _build_suggested_actions(self, recommendation: str) -> list[str]:
+        if recommendation == "block_and_isolate":
+            return ["block_ip", "isolate_host", "create_incident_ticket"]
+        if recommendation == "manual_review":
+            return ["query_asset", "collect_forensics", "create_incident_ticket"]
+        return ["query_asset", "watch_alert"]

@@ -17,6 +17,17 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@app.get("/health/llm")
+def health_llm() -> dict[str, object]:
+    return workflow.llm_health()
+
+
+@app.get("/audit/recent")
+def audit_recent(limit: int = 20) -> dict[str, object]:
+    bounded_limit = max(1, min(limit, 100))
+    return {"items": workflow.recent_audits(limit=bounded_limit)}
+
+
 @app.post("/analyze", response_model=AnalyzeResponse)
 def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
     return workflow.analyze(request)
