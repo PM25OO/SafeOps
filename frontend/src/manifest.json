@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "SafeOps AI Assistant",
+  "description": "Capture security alert context and forward to backend analysis pipeline.",
+  "version": "0.1.0",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": ["http://localhost:8000/*"],
+  "background": {
+    "service_worker": "service-worker.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content-script.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "SafeOps AI"
+  }
+}
