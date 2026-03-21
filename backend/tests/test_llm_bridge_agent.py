@@ -85,6 +85,10 @@ def test_qwen_request_uses_function_calling_and_parses_tool_arguments(monkeypatc
     assert "tools" in request_body
     assert request_body["tools"][0]["function"]["name"] == "submit_security_decision"
     assert request_body["tool_choice"]["function"]["name"] == "submit_security_decision"
+    assert request_body["messages"][0]["role"] == "system"
+    assert "简体中文" in request_body["messages"][0]["content"]
+    assert "response_language" in request_body["messages"][1]["content"]
+    assert "简体中文（zh-CN）" in request_body["messages"][1]["content"]
 
 
 def test_qwen_parses_json_from_message_content_when_tool_calls_missing(monkeypatch) -> None:
