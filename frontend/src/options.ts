@@ -81,9 +81,6 @@ function applySettingsToForm(settings: Partial<PluginSettings>): void {
   if (typeof settings.backendBaseUrl === "string") {
     (document.getElementById("backend-url") as HTMLInputElement).value = settings.backendBaseUrl;
   }
-  if (typeof settings.apiKey === "string") {
-    (document.getElementById("api-key") as HTMLInputElement).value = settings.apiKey;
-  }
   if (settings.parserRules) {
     (document.getElementById("parser-rules") as HTMLTextAreaElement).value = JSON.stringify(settings.parserRules, null, 2);
   }
@@ -95,7 +92,6 @@ function applySettingsToForm(settings: Partial<PluginSettings>): void {
 function collectDraftSettings(parserRulesArea: HTMLTextAreaElement): Partial<PluginSettings> {
   return {
     backendBaseUrl: normalizeBackendBaseUrl((document.getElementById("backend-url") as HTMLInputElement).value),
-    apiKey: (document.getElementById("api-key") as HTMLInputElement).value.trim(),
     allowlist: collectAllowlist(),
     parserRules: parseParserRulesText(parserRulesArea.value),
   };
@@ -134,7 +130,6 @@ async function initOptions(): Promise<void> {
     try {
       const payload = {
         backendBaseUrl: normalizeBackendBaseUrl((document.getElementById("backend-url") as HTMLInputElement).value),
-        apiKey: (document.getElementById("api-key") as HTMLInputElement).value.trim(),
       };
       const health = await sendMessage<{ backendConnected: boolean; llmConnected: boolean; llmMode?: string }>({
         type: "TEST_BACKEND_CONNECTION",
@@ -203,7 +198,6 @@ async function initOptions(): Promise<void> {
       const defaults = await sendMessage<PluginSettings>({ type: "GET_DEFAULT_SETTINGS" });
       const payload: Partial<PluginSettings> = {
         backendBaseUrl: defaults.backendBaseUrl,
-        apiKey: defaults.apiKey,
         allowlist: defaults.allowlist,
         parserRules: defaults.parserRules,
       };

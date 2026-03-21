@@ -58,7 +58,6 @@ describe("options-logic", () => {
     const imported = parseImportedOptions(
       JSON.stringify({
         backendBaseUrl: "https://safeops.local/",
-        apiKey: "  key-1  ",
         allowlist: {
           block_ip: false,
           isolate_host: true,
@@ -80,7 +79,6 @@ describe("options-logic", () => {
 
     expect(imported).toEqual({
       backendBaseUrl: "https://safeops.local",
-      apiKey: "key-1",
       allowlist: {
         query_asset: true,
         watch_alert: false,

@@ -47,7 +47,6 @@ export interface AllowlistConfig {
 export interface PluginSettings {
   pluginEnabled: boolean;
   backendBaseUrl: string;
-  apiKey: string;
   allowlist: AllowlistConfig;
   parserRules: ParserRules;
 }

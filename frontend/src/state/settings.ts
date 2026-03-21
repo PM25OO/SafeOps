@@ -3,7 +3,6 @@ import { DailyStats, PluginSettings } from "../api/protocol";
 export const DEFAULT_SETTINGS: PluginSettings = {
   pluginEnabled: true,
   backendBaseUrl: "http://localhost:8000",
-  apiKey: "",
   allowlist: {
     query_asset: true,
     watch_alert: true,

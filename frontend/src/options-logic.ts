@@ -120,10 +120,6 @@ export function parseImportedOptions(
     result.backendBaseUrl = normalizeBackendBaseUrl(raw.backendBaseUrl);
   }
 
-  if (typeof raw.apiKey === "string") {
-    result.apiKey = raw.apiKey.trim();
-  }
-
   if (raw.allowlist !== undefined) {
     result.allowlist = mergeAllowlist(raw.allowlist, currentAllowlist);
   }

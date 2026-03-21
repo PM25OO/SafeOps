@@ -19,14 +19,11 @@ import {
 
 const router = new MessageRouter();
 
-function buildRequestHeaders(settings: PluginSettings): Record<string, string> {
-  const headers: Record<string, string> = {
+function buildRequestHeaders(_settings: PluginSettings): Record<string, string> {
+  void _settings;
+  return {
     "Content-Type": "application/json",
   };
-  if (settings.apiKey.trim().length > 0) {
-    headers["X-API-Key"] = settings.apiKey.trim();
-  }
-  return headers;
 }
 
 async function getBackendHealth(settings: PluginSettings): Promise<{ backendConnected: boolean; llmConnected: boolean; llmMode?: string }> {
@@ -78,12 +75,11 @@ router.register("GET_POPUP_DASHBOARD", async () => {
 
 router.register("TEST_BACKEND_CONNECTION", async (message) => {
   const current = await loadSettings();
-  const payload = (message.payload ?? {}) as Partial<Pick<PluginSettings, "backendBaseUrl" | "apiKey">>;
+  const payload = (message.payload ?? {}) as Partial<Pick<PluginSettings, "backendBaseUrl">>;
 
   const merged: PluginSettings = {
     ...current,
     backendBaseUrl: payload.backendBaseUrl?.trim() || current.backendBaseUrl,
-    apiKey: payload.apiKey?.trim() ?? current.apiKey,
   };
 
   return getBackendHealth(merged);
