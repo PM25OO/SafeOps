@@ -29,7 +29,7 @@ function buildRequestHeaders(settings: PluginSettings): Record<string, string> {
   return headers;
 }
 
-async function getBackendHealth(settings: PluginSettings): Promise<{ backendConnected: boolean; llmConnected: boolean }> {
+async function getBackendHealth(settings: PluginSettings): Promise<{ backendConnected: boolean; llmConnected: boolean; llmMode?: string }> {
   try {
     const [healthResponse, llmResponse] = await Promise.all([
       fetch(`${settings.backendBaseUrl}/health`, { headers: buildRequestHeaders(settings) }),
@@ -37,11 +37,16 @@ async function getBackendHealth(settings: PluginSettings): Promise<{ backendConn
     ]);
 
     const backendConnected = healthResponse.ok;
-    const llmConnected = llmResponse.ok
-      ? Boolean((await llmResponse.json() as { llm_connected?: boolean }).llm_connected)
-      : false;
+    let llmConnected = false;
+    let llmMode: string | undefined;
+    
+    if (llmResponse.ok) {
+      const llmBody = await llmResponse.json() as { llm_connected?: boolean; mode?: string };
+      llmConnected = Boolean(llmBody.llm_connected);
+      llmMode = llmBody.mode;
+    }
 
-    return { backendConnected, llmConnected };
+    return { backendConnected, llmConnected, llmMode };
   } catch {
     return { backendConnected: false, llmConnected: false };
   }
@@ -65,6 +70,7 @@ router.register("GET_POPUP_DASHBOARD", async () => {
     pluginEnabled: settings.pluginEnabled,
     backendConnected: health.backendConnected,
     llmConnected: health.llmConnected,
+    llmMode: health.llmMode,
     processedAlerts: stats.processedAlerts,
     blockedAlerts: stats.blockedAlerts,
   };

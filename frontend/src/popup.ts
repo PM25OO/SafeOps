@@ -4,6 +4,7 @@ interface PopupDashboard {
   pluginEnabled: boolean;
   backendConnected: boolean;
   llmConnected: boolean;
+  llmMode?: string;
   processedAlerts: number;
   blockedAlerts: number;
 }
@@ -24,10 +25,14 @@ function sendMessage<T>(message: ExtensionMessage): Promise<T> {
   });
 }
 
-function setStatus(dot: HTMLElement, label: HTMLElement, ok: boolean, okText = "在线", badText = "离线"): void {
+function setStatus(dot: HTMLElement, label: HTMLElement, ok: boolean, okText = "在线", badText = "离线", modeText?: string): void {
   dot.classList.remove("status-ok", "status-bad");
   dot.classList.add(ok ? "status-ok" : "status-bad");
-  label.textContent = ok ? okText : badText;
+  if (modeText && ok) {
+    label.textContent = modeText;
+  } else {
+    label.textContent = ok ? okText : badText;
+  }
 }
 
 async function refreshDashboard(): Promise<void> {
@@ -46,7 +51,8 @@ async function refreshDashboard(): Promise<void> {
   toggleLabel.textContent = dashboard.pluginEnabled ? "已启用" : "已禁用";
 
   setStatus(backendDot, backendStatus, dashboard.backendConnected);
-  setStatus(llmDot, llmStatus, dashboard.llmConnected, "可用", "不可用");
+  const llmModeDisplay = dashboard.llmMode === "qwen" ? "通义千问" : dashboard.llmMode === "mock" ? "本地模型" : undefined;
+  setStatus(llmDot, llmStatus, dashboard.llmConnected, "可用", "不可用", llmModeDisplay);
 
   processedCount.textContent = String(dashboard.processedAlerts);
   blockedCount.textContent = String(dashboard.blockedAlerts);

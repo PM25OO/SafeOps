@@ -136,12 +136,13 @@ async function initOptions(): Promise<void> {
         backendBaseUrl: normalizeBackendBaseUrl((document.getElementById("backend-url") as HTMLInputElement).value),
         apiKey: (document.getElementById("api-key") as HTMLInputElement).value.trim(),
       };
-      const dashboard = await sendMessage<{ backendConnected: boolean; llmConnected: boolean }>({
+      const health = await sendMessage<{ backendConnected: boolean; llmConnected: boolean; llmMode?: string }>({
         type: "TEST_BACKEND_CONNECTION",
         payload,
       });
-      if (dashboard.backendConnected) {
-        setStatus(`✅ 后端在线，模型状态：${dashboard.llmConnected ? "可用" : "不可用"}`);
+      if (health.backendConnected) {
+        const modeText = health.llmMode === "qwen" ? "通义千问" : "本地模型";
+        setStatus(`✅ 后端在线，LLM 模块：${modeText}`);
       } else {
         setStatus("❌ 后端离线，请检查地址与服务状态", true);
       }
