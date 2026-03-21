@@ -10,7 +10,6 @@ import {
   DEFAULT_SETTINGS,
   bumpDailyStats,
   loadDailyStats,
-  loadLatestPanelData,
   loadSettings,
   saveLatestAnalysis,
   saveLatestContext,
@@ -124,36 +123,6 @@ router.register("ANALYZE_ALERT", async (message: ExtensionMessage) => {
     bumpDailyStats(result.recommendation === "block_and_isolate"),
   ]);
   return result;
-});
-
-router.register("OPEN_SIDE_PANEL", async (message, sender) => {
-  const payload = (message.payload ?? {}) as { context?: ParsedAlertContext };
-  if (payload.context) {
-    await saveLatestContext(payload.context);
-  }
-
-  const tabId = sender?.tab?.id;
-  if (typeof tabId !== "number") {
-    return { opened: false, error: "Unable to locate target tab." };
-  }
-
-  if (!chrome.sidePanel?.open) {
-    return { opened: false, error: "chrome.sidePanel API is not available." };
-  }
-
-  await chrome.sidePanel.setOptions({ tabId, path: "sidepanel.html", enabled: true });
-  await chrome.sidePanel.open({ tabId });
-  return { opened: true };
-});
-
-router.register("GET_SIDEPANEL_DATA", async () => {
-  const settings = await loadSettings();
-  const latest = await loadLatestPanelData();
-  return {
-    context: latest.context,
-    analysis: latest.analysis,
-    allowlist: settings.allowlist,
-  };
 });
 
 router.register("GET_AUDIT_LOGS", async () => {

@@ -13,7 +13,6 @@ const entryBundles = [
   { input: "content-script.ts", output: "content-script.js", format: "iife" },
   { input: "popup.ts", output: "popup.js", format: "iife" },
   { input: "options.ts", output: "options.js", format: "iife" },
-  { input: "sidepanel.ts", output: "sidepanel.js", format: "iife" },
   { input: "audit.ts", output: "audit.js", format: "iife" },
 ];
 
@@ -30,7 +29,7 @@ for (const bundle of entryBundles) {
   });
 }
 
-const staticFiles = ["manifest.json", "popup.html", "options.html", "sidepanel.html", "audit.html", "ui.css"];
+const staticFiles = ["manifest.json", "popup.html", "options.html", "audit.html", "ui.css", "logo.svg"];
 
 for (const file of staticFiles) {
   await cp(resolve(root, "src", file), resolve(distDir, file));

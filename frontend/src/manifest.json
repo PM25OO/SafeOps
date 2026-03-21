@@ -3,7 +3,7 @@
   "name": "SafeOps AI Assistant",
   "description": "Capture security alerts, drive AI-assisted decisions, and provide secure execution controls.",
   "version": "0.1.0",
-  "permissions": ["storage", "activeTab", "scripting", "sidePanel", "tabs"],
+  "permissions": ["storage", "activeTab", "scripting", "tabs"],
   "host_permissions": ["http://localhost:8000/*"],
   "background": {
     "service_worker": "service-worker.js",
@@ -20,8 +20,5 @@
     "default_title": "SafeOps AI",
     "default_popup": "popup.html"
   },
-  "options_page": "options.html",
-  "side_panel": {
-    "default_path": "sidepanel.html"
-  }
+  "options_page": "options.html"
 }

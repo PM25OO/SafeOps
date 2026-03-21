@@ -3,14 +3,12 @@ export type MessageType =
   | "PARSE_DOM"
   | "ANALYZE_ALERT"
   | "ANALYZE_RESULT"
-  | "OPEN_SIDE_PANEL"
   | "LOAD_SETTINGS"
   | "GET_DEFAULT_SETTINGS"
   | "UPDATE_SETTINGS"
   | "GET_POPUP_DASHBOARD"
   | "TEST_BACKEND_CONNECTION"
   | "GET_AUDIT_LOGS"
-  | "GET_SIDEPANEL_DATA"
   | "EXECUTE_ACTION";
 
 export type Recommendation = "monitor" | "manual_review" | "block_and_isolate";
