@@ -1,7 +1,12 @@
+from pathlib import Path
+
+from dotenv import load_dotenv
 from fastapi import FastAPI
 
 from app.models.schemas import AnalyzeRequest, AnalyzeResponse
 from app.orchestration.workflow import AnalysisWorkflow
+
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
 app = FastAPI(
     title="SafeOps AI Backend",
