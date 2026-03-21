@@ -7,6 +7,7 @@ import {
   PluginSettings,
 } from "./api/protocol";
 import {
+  DEFAULT_SETTINGS,
   bumpDailyStats,
   loadDailyStats,
   loadLatestPanelData,
@@ -50,6 +51,8 @@ router.register("PING", () => ({ status: "alive" }));
 
 router.register("LOAD_SETTINGS", async () => loadSettings());
 
+router.register("GET_DEFAULT_SETTINGS", async () => ({ ...DEFAULT_SETTINGS }));
+
 router.register("UPDATE_SETTINGS", async (message) => {
   const partial = (message.payload ?? {}) as Partial<PluginSettings>;
   return updateSettings(partial);
@@ -65,6 +68,19 @@ router.register("GET_POPUP_DASHBOARD", async () => {
     processedAlerts: stats.processedAlerts,
     blockedAlerts: stats.blockedAlerts,
   };
+});
+
+router.register("TEST_BACKEND_CONNECTION", async (message) => {
+  const current = await loadSettings();
+  const payload = (message.payload ?? {}) as Partial<Pick<PluginSettings, "backendBaseUrl" | "apiKey">>;
+
+  const merged: PluginSettings = {
+    ...current,
+    backendBaseUrl: payload.backendBaseUrl?.trim() || current.backendBaseUrl,
+    apiKey: payload.apiKey?.trim() ?? current.apiKey,
+  };
+
+  return getBackendHealth(merged);
 });
 
 router.register("ANALYZE_ALERT", async (message: ExtensionMessage) => {
