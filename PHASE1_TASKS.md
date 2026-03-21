@@ -68,7 +68,7 @@
 | BE-1.2.4 | ✅ | `/analyze` API端到端可调用 | `backend/app/main.py`, `backend/tests/test_analyze_api.py` | `python -m pytest -q` | `feat(api): implement analyze endpoint` |
 | BE-1.2.X | 🟡 | 后端覆盖率门禁与报告 | `backend/tests/*`, `backend/requirements.txt` | `python -m pytest -q` | `test(backend): enforce unit and integration coverage gate` |
 | BE-1.3.1 | ✅ | LLM bridge 支持Qwen+Mock降级 | `backend/app/agents/llm_bridge_agent.py` | `python -m pytest -q` | `feat(llm): add qwen bridge with mock fallback` |
-| BE-1.3.2 | ⬜ | Function Calling schema 固化与验证 | `backend/app/agents/llm_bridge_agent.py`, `docs/` | `python -m pytest -q` | `feat(llm): define function calling contracts` |
+| BE-1.3.2 | ✅ | Function Calling schema 固化与验证 | `backend/app/agents/llm_bridge_agent.py`, `docs/` | `python -m pytest -q` | `feat(llm): define function calling contracts` |
 | BE-1.3.3 | ✅ | AI 节点并入 LangGraph 主链路 | `backend/app/orchestration/workflow.py` | `python -m pytest -q` | `feat(orchestration): integrate ai enhancement node` |
 | BE-1.3.4 | ⬜ | Prompt 安全约束与误伤用例 | `backend/app/agents/llm_bridge_agent.py`, `backend/tests/` | `python -m pytest -q` | `docs(llm): add prompt guardrails and misuse cases` |
 | BE-1.3.X | ⬜ | 记录性能基准（P95/P99） | `docs/`, `backend/tests/` | `python -m pytest -q` | `test(perf): capture llm latency baseline` |
