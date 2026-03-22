@@ -22,6 +22,7 @@ SafeOps AI 是一个以浏览器插件为入口的安全运维辅助系统：
 - ✅ Options：后端地址、动作白名单、DOM规则JSON导入
 - ✅ Floating Ball：高危高亮、呼吸灯、拖拽贴边、单击切换监听、摘要提示框
 - 🟡 SidePanel：已支持悬浮球 hover 分裂按钮触发，轻量只读页继续在 Phase 2 完善
+- ✅ Backend Request Resilience：前端调用后端已统一超时、重试与错误码输出
 - ✅ Backend：`/analyze`、`/health`、`/health/llm`、`/audit/recent`
 - ✅ 审计：后端 JSONL 审计落盘 + 前端审计页查看
 

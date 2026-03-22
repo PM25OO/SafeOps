@@ -14,6 +14,12 @@ export type MessageType =
 
 export type Recommendation = "monitor" | "manual_review" | "block_and_isolate";
 
+export type BackendErrorCode =
+  | "BACKEND_TIMEOUT"
+  | "BACKEND_NETWORK"
+  | "BACKEND_HTTP"
+  | "BACKEND_RESPONSE_PARSE";
+
 export type ActionId =
   | "query_asset"
   | "watch_alert"

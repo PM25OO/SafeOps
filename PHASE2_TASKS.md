@@ -61,7 +61,7 @@
 | ID | 状态 | 目标闭环 | 关键文件 | 验证命令 | 建议提交消息 |
 |---|---|---|---|---|---|
 | STB-2.1 | ✅ | 扩展上下文失效容错统一（content/service-worker） | `frontend/src/content-script.ts`, `frontend/src/service-worker.ts` | `npm run build` | `fix(stability): unify extension context invalidation handling` |
-| STB-2.2 | ⬜ | 前端后端调用超时/重试/错误码标准化 | `frontend/src/service-worker.ts`, `frontend/src/api/protocol.ts` | `npm test -- --runInBand` + `npm run build` | `feat(stability): add resilient backend request handling` |
+| STB-2.2 | ✅ | 前端后端调用超时/重试/错误码标准化 | `frontend/src/service-worker.ts`, `frontend/src/api/protocol.ts` | `npm test -- --runInBand` + `npm run build` | `feat(stability): add resilient backend request handling` |
 | STB-2.3 | ⬜ | 前端状态提示一致化（避免重复/冲突文案） | `frontend/src/content-script.ts`, `frontend/src/popup.ts`, `frontend/src/options.ts` | `npm run build` | `fix(ui): normalize runtime status messaging` |
 | STB-2.4 | ⬜ | 后端错误分级与可观测日志字段统一 | `backend/app/main.py`, `backend/app/orchestration/workflow.py` | `python -m pytest -q` | `refactor(backend): standardize error classification and logging` |
 | UI-2.0 | ✅ | 悬浮球 hover 分裂二级按钮并接入 SidePanel 触发 | `frontend/src/content-script.ts`, `frontend/src/service-worker.ts`, `frontend/src/manifest.json` | `npm run build` | `feat(sidepanel): add hover-split secondary trigger from floating ball` |
