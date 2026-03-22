@@ -168,18 +168,6 @@ async function requestBackendJson<T>(
   throw new BackendRequestError("BACKEND_NETWORK", "Backend request exhausted all retries.", undefined, false, retries + 1);
 }
 
-function setSidePanelOptions(options: chrome.sidePanel.PanelOptions): Promise<void> {
-  return new Promise((resolve, reject) => {
-    chrome.sidePanel.setOptions(options, () => {
-      if (chrome.runtime.lastError) {
-        reject(new Error(chrome.runtime.lastError.message));
-        return;
-      }
-      resolve();
-    });
-  });
-}
-
 function openSidePanel(options: chrome.sidePanel.OpenOptions): Promise<void> {
   return new Promise((resolve, reject) => {
     chrome.sidePanel.open(options, () => {
@@ -192,18 +180,30 @@ function openSidePanel(options: chrome.sidePanel.OpenOptions): Promise<void> {
   });
 }
 
-async function openSidePanelForTab(tabId: number): Promise<void> {
+async function openSidePanelForTab(tabId: number, windowId?: number): Promise<void> {
   if (!chrome.sidePanel?.setOptions || !chrome.sidePanel?.open) {
     throw new Error("SidePanel API is not available in current runtime.");
   }
 
-  await setSidePanelOptions({
-    tabId,
-    path: DEFAULT_SIDE_PANEL_PATH,
-    enabled: true,
-  });
+  // 优先直接打开，避免在用户手势链路中先执行异步 setOptions 导致手势丢失。
+  try {
+    await openSidePanel({ tabId });
+    return;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown side panel open error";
 
-  await openSidePanel({ tabId });
+    // 某些运行时场景下 tabId 可能不可用，退化为 windowId 打开。
+    if (typeof windowId === "number") {
+      try {
+        await openSidePanel({ windowId });
+        return;
+      } catch {
+        // 保留原始错误信息，便于上层定位。
+      }
+    }
+
+    throw new Error(message);
+  }
 }
 
 async function getBackendHealth(settings: PluginSettings): Promise<{ backendConnected: boolean; llmConnected: boolean; llmMode?: string }> {
@@ -277,11 +277,12 @@ router.register("TEST_BACKEND_CONNECTION", async (message) => {
 
 router.register("OPEN_SIDE_PANEL", async (_message, sender) => {
   const tabId = sender?.tab?.id;
+  const windowId = sender?.tab?.windowId;
   if (typeof tabId !== "number") {
     throw new Error("Cannot resolve sender tab id for SidePanel open.");
   }
 
-  await openSidePanelForTab(tabId);
+  await openSidePanelForTab(tabId, windowId);
   return {
     opened: true,
     tabId,

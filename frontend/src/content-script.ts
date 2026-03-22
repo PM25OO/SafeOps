@@ -520,6 +520,8 @@ async function openSidePanel(ball: HTMLDivElement): Promise<void> {
     }
 
     console.warn("[SafeOps] Open SidePanel failed:", error);
+    const detail = error instanceof Error ? error.message : "未知错误";
+    showSummaryTip(ball, `侧边栏打开失败：${detail}`, SUMMARY_TIP_AUTO_HIDE_MS);
   }
 }
 
