@@ -1,6 +1,7 @@
 import { parseAlertContext } from "./parser/dom-parser";
 import { AnalyzeResultView, ExtensionMessage, ParsedAlertContext, PluginSettings } from "./api/protocol";
 import { getStorageLocal, loadSettings, saveLatestContext, setStorageLocal } from "./state/settings";
+import { getBackendErrorHint } from "./ui/status-messages";
 
 const BALL_ID = "safeops-floating-ball";
 const SAFEOPS_STYLE_ID = "safeops-floating-style";
@@ -708,6 +709,7 @@ async function analyzeIfEnabled(ball: HTMLDivElement, context: ParsedAlertContex
     }
 
     console.warn("[SafeOps] Analyze failed:", error);
+    showSummaryTip(ball, `分析失败：${getBackendErrorHint(error, "请检查后端连接状态。")}`, SUMMARY_TIP_AUTO_HIDE_MS);
     return null;
   }
 }

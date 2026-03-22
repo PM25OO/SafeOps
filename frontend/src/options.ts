@@ -4,6 +4,7 @@ import {
   parseImportedOptions,
   parseParserRulesText,
 } from "./options-logic";
+import { getBackendErrorHint, getLlmModeLabel } from "./ui/status-messages";
 
 const ALLOWLIST_LABELS: Array<{ key: keyof AllowlistConfig; label: string }> = [
   { key: "query_asset", label: "查询资产" },
@@ -122,7 +123,7 @@ async function initOptions(): Promise<void> {
       applySettingsToForm(updated);
       setStatus("✅ 配置已保存");
     } catch (error) {
-      setStatus(`❌ 保存失败：${error instanceof Error ? error.message : "未知错误"}`, true);
+      setStatus(`❌ ${getBackendErrorHint(error, "保存失败，请稍后重试。")}`, true);
     }
   });
 
@@ -136,13 +137,13 @@ async function initOptions(): Promise<void> {
         payload,
       });
       if (health.backendConnected) {
-        const modeText = health.llmMode === "qwen" ? "通义千问" : "本地模型";
+        const modeText = getLlmModeLabel(health.llmMode) ?? "不可用";
         setStatus(`✅ 后端在线，LLM 模块：${modeText}`);
       } else {
         setStatus("❌ 后端离线，请检查地址与服务状态", true);
       }
     } catch (error) {
-      setStatus(`❌ 连接测试失败：${error instanceof Error ? error.message : "未知错误"}`, true);
+      setStatus(`❌ ${getBackendErrorHint(error, "连接测试失败，请检查后端状态。")}`, true);
     }
   });
 
@@ -159,7 +160,7 @@ async function initOptions(): Promise<void> {
       applySettingsToForm(imported);
       setStatus("✅ JSON 已导入，请点击保存配置使其生效");
     } catch (error) {
-      setStatus(`❌ 导入失败：${error instanceof Error ? error.message : "未知错误"}`, true);
+      setStatus(`❌ ${getBackendErrorHint(error, "导入失败，请检查文件内容。")}`, true);
     } finally {
       importFile.value = "";
     }
@@ -171,7 +172,7 @@ async function initOptions(): Promise<void> {
       parserRulesArea.value = JSON.stringify(parsed, null, 2);
       setStatus("✅ JSON 格式化完成");
     } catch (error) {
-      setStatus(`❌ JSON格式错误：${error instanceof Error ? error.message : "未知错误"}`, true);
+      setStatus(`❌ ${getBackendErrorHint(error, "JSON 格式化失败。")}`, true);
     }
   });
 
@@ -189,7 +190,7 @@ async function initOptions(): Promise<void> {
       URL.revokeObjectURL(url);
       setStatus("✅ 配置已导出");
     } catch (error) {
-      setStatus(`❌ 导出失败：${error instanceof Error ? error.message : "未知错误"}`, true);
+      setStatus(`❌ ${getBackendErrorHint(error, "导出失败，请稍后重试。")}`, true);
     }
   });
 
@@ -205,7 +206,7 @@ async function initOptions(): Promise<void> {
       applySettingsToForm(updated);
       setStatus("✅ 已恢复默认配置");
     } catch (error) {
-      setStatus(`❌ 重置失败：${error instanceof Error ? error.message : "未知错误"}`, true);
+      setStatus(`❌ ${getBackendErrorHint(error, "重置失败，请稍后重试。")}`, true);
     }
   });
 }
