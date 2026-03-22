@@ -2,7 +2,7 @@
 
 > 适用对象：GitHub Copilot / Coding Agent  
 > 目标：把 Phase 1 拆解成可自动执行、可验证、可提交的闭环任务。  
-> 更新时间：2026-03-21
+> 更新时间：2026-03-22
 
 ---
 
@@ -80,8 +80,8 @@
 | INT-1.5.3 | ⬜ | 性能基准与优化报告 | `docs/*`, `tests/*` | `python -m pytest -q` | `docs(perf): publish phase1 baseline report` |
 | FE-1.6.1 | ✅ | Popup 控制台可用 | `frontend/src/popup.*`, `frontend/src/ui.css` | `npm run build` | `feat(extension-ui): add popup dashboard` |
 | FE-1.6.2 | ✅ | Options 配置中心可用 | `frontend/src/options.*`, `frontend/src/state/settings.ts` | `npm run build` | `feat(extension-ui): add options center` |
-| FE-1.6.3 | ✅ | 悬浮球高危提示+拖拽+打开侧栏 | `frontend/src/content-script.ts` | `npm run build` | `feat(content): add floating ball interactions` |
-| FE-1.6.4 | ✅ | SidePanel + 二次确认动作面板 | `frontend/src/sidepanel.*`, `frontend/src/service-worker.ts` | `npm run build` | `feat(sidepanel): add context chat and action confirm` |
+| FE-1.6.3 | ✅ | 悬浮球高危提示+拖拽贴边+监听切换 | `frontend/src/content-script.ts` | `npm run build` | `feat(content): add floating ball interactions` |
+| FE-1.6.4 | ⬜ | SidePanel + 二次确认动作面板（已转入 Phase 2） | `frontend/src/sidepanel.*`, `frontend/src/service-worker.ts` | `npm run build` | `feat(sidepanel): add context chat and action confirm` |
 | FE-1.6.X | ✅ | 多入口构建产物稳定导出 | `frontend/scripts/build.mjs`, `frontend/src/manifest.json` | `npm run build` | `fix(frontend-build): bundle multipage extension assets` |
 
 ---

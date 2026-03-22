@@ -13,15 +13,15 @@ SafeOps AI 是一个以浏览器插件为入口的安全运维辅助系统：
 - 在页面侧自动解析告警上下文（告警ID、级别、资产、用户等）
 - 将上下文发送到后端进行规则与AI联合分析
 - 返回风险分、建议动作、策略判定结果
-- 在插件 UI（Popup / SidePanel / 审计页）中展示并执行“二次确认”流程
+- 在插件 UI（Popup / Options / 审计页）中展示分析结果，并通过悬浮球进行监听交互
 
 ### 当前可用能力（MVP）
 
 - ✅ 插件基础：MV3 + Service Worker + Content Script
 - ✅ Popup：全局开关、连接状态、今日统计、快捷入口
-- ✅ Options：后端地址/API Key、动作白名单、DOM规则JSON导入
-- ✅ Floating Ball：高危高亮、呼吸灯、拖拽、打开侧边栏
-- ✅ SidePanel：Context、AI分析文本、动作区二次确认
+- ✅ Options：后端地址、动作白名单、DOM规则JSON导入
+- ✅ Floating Ball：高危高亮、呼吸灯、拖拽贴边、单击切换监听、摘要提示框
+- 🟡 SidePanel：轻量只读版计划在 Phase 2 回归
 - ✅ Backend：`/analyze`、`/health`、`/health/llm`、`/audit/recent`
 - ✅ 审计：后端 JSONL 审计落盘 + 前端审计页查看
 
@@ -33,7 +33,7 @@ SafeOps AI 是一个以浏览器插件为入口的安全运维辅助系统：
 Chrome Extension (MV3)
   ├─ content-script.ts      页面解析 + 悬浮球 + 触发分析
   ├─ service-worker.ts      消息路由 + 存储 + 后端调用
-  ├─ popup/options/sidepanel/audit
+  ├─ popup/options/audit
   └─ dist/                  可加载的插件产物
 
 FastAPI + LangGraph
@@ -115,10 +115,7 @@ FastAPI + LangGraph
 2. 在插件 Popup 中确认“自动监听”已启用
 3. 打开任意页面触发 content script
 4. 页面出现悬浮球；高危内容会高亮
-5. 点击悬浮球打开 SidePanel：
-   - 查看 Context
-   - 查看 AI 分析
-   - 点击建议动作并进行二次确认
+5. 单击悬浮球可开启/关闭监听；收到摘要后会在悬浮球旁显示提示框
 6. 在 Popup 中点击“历史审计日志”查看审计记录
 
 ---

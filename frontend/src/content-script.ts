@@ -5,10 +5,15 @@ import { getStorageLocal, loadSettings, saveLatestContext, setStorageLocal } fro
 const BALL_ID = "safeops-floating-ball";
 const SAFEOPS_STYLE_ID = "safeops-floating-style";
 const BALL_LOGO_CLASS = "safeops-ball-logo";
+const SUMMARY_TIP_ID = "safeops-summary-tip";
+const SUMMARY_TIP_VISIBLE_CLASS = "visible";
 const BALL_POSITION_KEY = "safeopsFloatingBallPosition";
 const BALL_SIZE = 30;
 const BALL_EDGE_GAP = 10;
 const DRAG_THRESHOLD = 4;
+const SUMMARY_TIP_GAP = 10;
+const SUMMARY_TIP_MAX_WIDTH = 320;
+const SUMMARY_TIP_AUTO_HIDE_MS = 2000;
 const HIGH_RISK_KEYWORDS = ["ransomware", "exfiltration", "c2", "malware", "bruteforce", "botnet"];
 const BALL_LOGO_SVG = `<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="100%" viewBox="0 0 50 50" enable-background="new 0 0 50 50" xml:space="preserve" height="100%" preserveAspectRatio="xMidYMid meet"><path fill="#FAFAFA" opacity="1.000000" stroke="none" d="M37.017303,51.000000 C24.681440,51.000000 12.848447,51.000000 1.011590,51.000000 C1.007726,34.338966 1.007726,17.677925 1.003861,1.012665 C17.660557,1.008443 34.321121,1.008443 50.986259,1.004219 C50.990841,17.660078 50.990841,34.320164 50.990841,51.000000 C46.506737,51.000000 42.013454,51.000000 37.017303,51.000000 M26.397673,2.143962 C20.044712,4.354548 13.691751,6.565133 6.956484,8.908746 C6.956484,13.332345 7.225052,18.160713 6.904999,22.949745 C6.023767,36.135845 14.045857,43.292900 24.195997,49.076584 C24.960323,49.512108 26.238625,49.898746 26.884794,49.559395 C35.357548,45.109715 43.110481,39.490654 44.715523,29.455956 C45.823872,22.526590 44.928406,15.276717 44.928406,8.911549 C38.571678,6.629993 32.818527,4.565075 26.397673,2.143962 z"></path><path fill="#102D42" opacity="1.000000" stroke="none" d="M26.731525,2.322060 C32.818527,4.565075 38.571678,6.629993 44.928406,8.911549 C44.928406,15.276717 45.823872,22.526590 44.715523,29.455956 C43.110481,39.490654 35.357548,45.109715 26.884794,49.559395 C26.238625,49.898746 24.960323,49.512108 24.195997,49.076584 C14.045857,43.292900 6.023767,36.135845 6.904999,22.949745 C7.225052,18.160713 6.956484,13.332345 6.956484,8.908746 C13.691751,6.565133 20.044712,4.354548 26.731525,2.322060 M22.520973,16.107506 C21.699078,16.507143 20.421419,16.698141 20.127771,17.339602 C17.885742,22.237211 15.835588,27.222656 13.263151,33.267849 C17.229074,31.595577 20.042536,29.500605 22.870453,29.480904 C25.521763,29.462431 28.188370,31.639935 31.965178,33.359692 C30.200567,29.069221 29.177601,26.086275 27.767025,23.299522 C26.498285,20.792984 24.804207,18.501736 22.520973,16.107506 M33.034435,22.611073 C33.036251,25.093117 32.861759,27.594242 33.127258,30.047752 C33.232433,31.019699 34.315113,31.885870 34.952728,32.800201 C35.649834,31.956709 36.911182,31.138060 36.949604,30.265564 C37.151447,25.681629 37.044044,21.084078 37.044044,16.356573 C31.387424,15.552015 33.602341,19.549152 33.034435,22.611073 z"></path><path fill="#E4E7E9" opacity="1.000000" stroke="none" d="M22.909359,16.111515 C24.804207,18.501736 26.498285,20.792984 27.767025,23.299522 C29.177601,26.086275 30.200567,29.069221 31.965178,33.359692 C28.188370,31.639935 25.521763,29.462431 22.870453,29.480904 C20.042536,29.500605 17.229074,31.595577 13.263151,33.267849 C15.835588,27.222656 17.885742,22.237211 20.127771,17.339602 C20.421419,16.698141 21.699078,16.507143 22.909359,16.111515 z"></path><path fill="#E4E7E9" opacity="1.000000" stroke="none" d="M33.034325,22.141592 C33.602341,19.549152 31.387424,15.552015 37.044044,16.356573 C37.044044,21.084078 37.151447,25.681629 36.949604,30.265564 C36.911182,31.138060 35.649834,31.956709 34.952728,32.800201 C34.315113,31.885870 33.232433,31.019699 33.127258,30.047752 C32.861759,27.594242 33.036251,25.093117 33.034325,22.141592 z"></path></svg>`;
 
@@ -18,6 +23,9 @@ interface BallPosition {
   side: "left" | "right";
   top: number;
 }
+
+let latestSummaryText = "";
+let summaryTipHideTimer: number | undefined;
 
 function ensureStyle(): void {
   if (document.getElementById(SAFEOPS_STYLE_ID)) {
@@ -87,6 +95,52 @@ function ensureStyle(): void {
     #${BALL_ID}.dragging {
       transition: none;
       cursor: grabbing;
+    }
+
+    #${SUMMARY_TIP_ID} {
+      position: fixed;
+      z-index: 2147483646;
+      max-width: ${SUMMARY_TIP_MAX_WIDTH}px;
+      min-width: 180px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(59, 130, 246, 0.35);
+      background: rgba(2, 6, 23, 0.92);
+      color: #e2e8f0;
+      font-size: 12px;
+      line-height: 1.45;
+      box-shadow: 0 10px 24px rgba(2, 6, 23, 0.4);
+      opacity: 0;
+      transform: translateY(4px);
+      pointer-events: none;
+      user-select: none;
+      transition: opacity .16s ease, transform .16s ease;
+      white-space: normal;
+      word-break: break-word;
+    }
+
+    #${SUMMARY_TIP_ID}::after {
+      content: "";
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: rgba(2, 6, 23, 0.92);
+      border-right: 1px solid rgba(59, 130, 246, 0.35);
+      border-bottom: 1px solid rgba(59, 130, 246, 0.35);
+      left: -5px;
+      top: 50%;
+      transform: translateY(-50%) rotate(135deg);
+    }
+
+    #${SUMMARY_TIP_ID}[data-side="left"]::after {
+      left: auto;
+      right: -5px;
+      transform: translateY(-50%) rotate(-45deg);
+    }
+
+    #${SUMMARY_TIP_ID}.${SUMMARY_TIP_VISIBLE_CLASS} {
+      opacity: 1;
+      transform: translateY(0);
     }
 
     @keyframes safeops-listening-glow {
@@ -166,6 +220,83 @@ function normalizeDecisionSummary(summary: string): string {
   return uniqueLines.join(" ");
 }
 
+function clearSummaryTipHideTimer(): void {
+  if (typeof summaryTipHideTimer === "number") {
+    window.clearTimeout(summaryTipHideTimer);
+    summaryTipHideTimer = undefined;
+  }
+}
+
+function ensureSummaryTip(): HTMLDivElement {
+  ensureStyle();
+  let tip = document.getElementById(SUMMARY_TIP_ID) as HTMLDivElement | null;
+  if (tip) {
+    return tip;
+  }
+
+  tip = document.createElement("div");
+  tip.id = SUMMARY_TIP_ID;
+  document.documentElement.appendChild(tip);
+  return tip;
+}
+
+function updateSummaryTipPosition(ball: HTMLDivElement, tip: HTMLDivElement): void {
+  const ballRect = ball.getBoundingClientRect();
+  const tipWidth = Math.min(Math.max(tip.offsetWidth, 180), SUMMARY_TIP_MAX_WIDTH);
+  const tipHeight = Math.max(tip.offsetHeight, 36);
+
+  let left = ballRect.right + SUMMARY_TIP_GAP;
+  let side: "left" | "right" = "right";
+  if (left + tipWidth > window.innerWidth - BALL_EDGE_GAP) {
+    left = ballRect.left - SUMMARY_TIP_GAP - tipWidth;
+    side = "left";
+  }
+
+  left = clamp(left, BALL_EDGE_GAP, Math.max(BALL_EDGE_GAP, window.innerWidth - tipWidth - BALL_EDGE_GAP));
+  const top = clamp(
+    ballRect.top + ballRect.height / 2 - tipHeight / 2,
+    BALL_EDGE_GAP,
+    Math.max(BALL_EDGE_GAP, window.innerHeight - tipHeight - BALL_EDGE_GAP),
+  );
+
+  tip.dataset.side = side;
+  tip.style.left = `${left}px`;
+  tip.style.top = `${top}px`;
+}
+
+function syncSummaryTipPosition(ball: HTMLDivElement): void {
+  const tip = document.getElementById(SUMMARY_TIP_ID) as HTMLDivElement | null;
+  if (!tip || !tip.classList.contains(SUMMARY_TIP_VISIBLE_CLASS)) {
+    return;
+  }
+
+  updateSummaryTipPosition(ball, tip);
+}
+
+function hideSummaryTip(): void {
+  clearSummaryTipHideTimer();
+  const tip = document.getElementById(SUMMARY_TIP_ID) as HTMLDivElement | null;
+  if (!tip) {
+    return;
+  }
+  tip.classList.remove(SUMMARY_TIP_VISIBLE_CLASS);
+}
+
+function showSummaryTip(ball: HTMLDivElement, summary: string, autoHideMs?: number): void {
+  latestSummaryText = summary;
+  const tip = ensureSummaryTip();
+  tip.textContent = summary;
+  tip.classList.add(SUMMARY_TIP_VISIBLE_CLASS);
+  updateSummaryTipPosition(ball, tip);
+
+  clearSummaryTipHideTimer();
+  if (typeof autoHideMs === "number" && autoHideMs > 0) {
+    summaryTipHideTimer = window.setTimeout(() => {
+      hideSummaryTip();
+    }, autoHideMs);
+  }
+}
+
 function sendMessage<T>(message: ExtensionMessage): Promise<T> {
   return new Promise((resolve, reject) => {
     if (!chrome?.runtime?.id) {
@@ -193,10 +324,15 @@ function sendMessage<T>(message: ExtensionMessage): Promise<T> {
   });
 }
 
+function clearBallTitle(ball: HTMLDivElement): void {
+  ball.removeAttribute("title");
+}
+
 function ensureFloatingBall(): HTMLDivElement {
   ensureStyle();
   let ball = document.getElementById(BALL_ID) as HTMLDivElement | null;
   if (ball) {
+    clearBallTitle(ball);
     return ball;
   }
 
@@ -208,7 +344,7 @@ function ensureFloatingBall(): HTMLDivElement {
   svgElement.setAttribute("aria-hidden", "true");
   svgElement.setAttribute("focusable", "false");
   ball.appendChild(document.importNode(svgElement, true));
-  ball.title = "SafeOps 悬浮球（单击切换监听）";
+  clearBallTitle(ball);
   document.documentElement.appendChild(ball);
   return ball;
 }
@@ -248,6 +384,7 @@ function snapToEdge(ball: HTMLDivElement): void {
   }
 
   void setStorageLocal<BallPosition>(BALL_POSITION_KEY, { side, top });
+  syncSummaryTipPosition(ball);
 }
 
 function enableDrag(ball: HTMLDivElement): void {
@@ -259,6 +396,7 @@ function enableDrag(ball: HTMLDivElement): void {
   let moved = false;
 
   ball.addEventListener("mousedown", (event) => {
+    hideSummaryTip();
     pointerDown = true;
     moved = false;
     startX = event.clientX;
@@ -293,6 +431,7 @@ function enableDrag(ball: HTMLDivElement): void {
     const top = clamp(event.clientY - offsetY, 0, Math.max(0, window.innerHeight - BALL_SIZE));
     ball.style.left = `${left}px`;
     ball.style.top = `${top}px`;
+    syncSummaryTipPosition(ball);
   });
 
   document.addEventListener("mouseup", () => {
@@ -326,27 +465,39 @@ function enableDrag(ball: HTMLDivElement): void {
   );
 }
 
+function bindSummaryTipHover(ball: HTMLDivElement): void {
+  ball.addEventListener("mouseenter", () => {
+    if (!latestSummaryText) {
+      return;
+    }
+    showSummaryTip(ball, latestSummaryText);
+  });
+
+  ball.addEventListener("mouseleave", () => {
+    hideSummaryTip();
+  });
+}
+
 function updateBallState(ball: HTMLDivElement, state: BallVisualState): void {
   ball.classList.remove("safeops-listening", "safeops-alert", "safeops-disabled");
+  clearBallTitle(ball);
   if (state === "disabled") {
     ball.classList.add("safeops-disabled");
-    ball.title = "SafeOps 监听已关闭（单击开启）";
     return;
   }
 
   if (state === "alert") {
     ball.classList.add("safeops-alert");
-    ball.title = "SafeOps 监听中（高风险）｜单击关闭";
     return;
   }
 
   ball.classList.add("safeops-listening");
-  ball.title = "SafeOps 监听中（单击关闭）";
 }
 
 async function analyzeAndApplyState(ball: HTMLDivElement, settings: PluginSettings, context: ParsedAlertContext): Promise<void> {
   if (!settings.pluginEnabled) {
     updateBallState(ball, "disabled");
+    hideSummaryTip();
     return;
   }
 
@@ -360,9 +511,12 @@ async function analyzeAndApplyState(ball: HTMLDivElement, settings: PluginSettin
   if (result?.ai_decision?.summary) {
     const normalizedSummary = normalizeDecisionSummary(result.ai_decision.summary);
     if (normalizedSummary) {
-      ball.title = `${ball.title}\n${normalizedSummary}`;
+      showSummaryTip(ball, normalizedSummary, SUMMARY_TIP_AUTO_HIDE_MS);
+      return;
     }
   }
+
+  hideSummaryTip();
 }
 
 async function toggleMonitoring(ball: HTMLDivElement, context: ParsedAlertContext): Promise<void> {
@@ -378,12 +532,12 @@ async function toggleMonitoring(ball: HTMLDivElement, context: ParsedAlertContex
   } catch (error) {
     if (isContextInvalidatedError(error)) {
       updateBallState(ball, "disabled");
-      ball.title = "SafeOps 扩展已更新，请刷新当前页面后继续使用";
+      hideSummaryTip();
       return;
     }
 
     console.warn("[SafeOps] Toggle monitoring failed:", error);
-    ball.title = "SafeOps 监听切换失败，请稍后重试";
+    hideSummaryTip();
   }
 }
 
@@ -435,9 +589,13 @@ async function bootstrap(): Promise<void> {
   const ball = ensureFloatingBall();
   await restoreBallPosition(ball);
   enableDrag(ball);
+  bindSummaryTipHover(ball);
   bindSingleClickToggle(ball, context);
   bindStorageSync(ball, context);
-  window.addEventListener("resize", () => snapToEdge(ball));
+  window.addEventListener("resize", () => {
+    snapToEdge(ball);
+    syncSummaryTipPosition(ball);
+  });
 
   await analyzeAndApplyState(ball, settings, context);
 }
