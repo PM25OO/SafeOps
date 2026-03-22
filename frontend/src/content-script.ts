@@ -7,6 +7,7 @@ const BALL_ID = "safeops-floating-ball";
 const SAFEOPS_STYLE_ID = "safeops-floating-style";
 const BALL_LOGO_CLASS = "safeops-ball-logo";
 const SECONDARY_TRIGGER_CLASS = "safeops-secondary-trigger";
+const SECONDARY_TRIGGER_OPEN_CLASS = "safeops-secondary-open";
 const SUMMARY_TIP_ID = "safeops-summary-tip";
 const SUMMARY_TIP_VISIBLE_CLASS = "visible";
 const BALL_POSITION_KEY = "safeopsFloatingBallPosition";
@@ -16,6 +17,7 @@ const DRAG_THRESHOLD = 4;
 const SUMMARY_TIP_GAP = 10;
 const SUMMARY_TIP_MAX_WIDTH = 320;
 const SUMMARY_TIP_AUTO_HIDE_MS = 2000;
+const SECONDARY_TRIGGER_HIDE_DELAY_MS = 700;
 const HIGH_RISK_KEYWORDS = ["ransomware", "exfiltration", "c2", "malware", "bruteforce", "botnet"];
 const BALL_LOGO_SVG = `<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="100%" viewBox="0 0 50 50" enable-background="new 0 0 50 50" xml:space="preserve" height="100%" preserveAspectRatio="xMidYMid meet"><path fill="#FAFAFA" opacity="1.000000" stroke="none" d="M37.017303,51.000000 C24.681440,51.000000 12.848447,51.000000 1.011590,51.000000 C1.007726,34.338966 1.007726,17.677925 1.003861,1.012665 C17.660557,1.008443 34.321121,1.008443 50.986259,1.004219 C50.990841,17.660078 50.990841,34.320164 50.990841,51.000000 C46.506737,51.000000 42.013454,51.000000 37.017303,51.000000 M26.397673,2.143962 C20.044712,4.354548 13.691751,6.565133 6.956484,8.908746 C6.956484,13.332345 7.225052,18.160713 6.904999,22.949745 C6.023767,36.135845 14.045857,43.292900 24.195997,49.076584 C24.960323,49.512108 26.238625,49.898746 26.884794,49.559395 C35.357548,45.109715 43.110481,39.490654 44.715523,29.455956 C45.823872,22.526590 44.928406,15.276717 44.928406,8.911549 C38.571678,6.629993 32.818527,4.565075 26.397673,2.143962 z"></path><path fill="#102D42" opacity="1.000000" stroke="none" d="M26.731525,2.322060 C32.818527,4.565075 38.571678,6.629993 44.928406,8.911549 C44.928406,15.276717 45.823872,22.526590 44.715523,29.455956 C43.110481,39.490654 35.357548,45.109715 26.884794,49.559395 C26.238625,49.898746 24.960323,49.512108 24.195997,49.076584 C14.045857,43.292900 6.023767,36.135845 6.904999,22.949745 C7.225052,18.160713 6.956484,13.332345 6.956484,8.908746 C13.691751,6.565133 20.044712,4.354548 26.731525,2.322060 M22.520973,16.107506 C21.699078,16.507143 20.421419,16.698141 20.127771,17.339602 C17.885742,22.237211 15.835588,27.222656 13.263151,33.267849 C17.229074,31.595577 20.042536,29.500605 22.870453,29.480904 C25.521763,29.462431 28.188370,31.639935 31.965178,33.359692 C30.200567,29.069221 29.177601,26.086275 27.767025,23.299522 C26.498285,20.792984 24.804207,18.501736 22.520973,16.107506 M33.034435,22.611073 C33.036251,25.093117 32.861759,27.594242 33.127258,30.047752 C33.232433,31.019699 34.315113,31.885870 34.952728,32.800201 C35.649834,31.956709 36.911182,31.138060 36.949604,30.265564 C37.151447,25.681629 37.044044,21.084078 37.044044,16.356573 C31.387424,15.552015 33.602341,19.549152 33.034435,22.611073 z"></path><path fill="#E4E7E9" opacity="1.000000" stroke="none" d="M22.909359,16.111515 C24.804207,18.501736 26.498285,20.792984 27.767025,23.299522 C29.177601,26.086275 30.200567,29.069221 31.965178,33.359692 C28.188370,31.639935 25.521763,29.462431 22.870453,29.480904 C20.042536,29.500605 17.229074,31.595577 13.263151,33.267849 C15.835588,27.222656 17.885742,22.237211 20.127771,17.339602 C20.421419,16.698141 21.699078,16.507143 22.909359,16.111515 z"></path><path fill="#E4E7E9" opacity="1.000000" stroke="none" d="M33.034325,22.141592 C33.602341,19.549152 31.387424,15.552015 37.044044,16.356573 C37.044044,21.084078 37.151447,25.681629 36.949604,30.265564 C36.911182,31.138060 35.649834,31.956709 34.952728,32.800201 C34.315113,31.885870 33.232433,31.019699 33.127258,30.047752 C32.861759,27.594242 33.036251,25.093117 33.034325,22.141592 z"></path></svg>`;
 
@@ -28,6 +30,7 @@ interface BallPosition {
 
 let latestSummaryText = "";
 let summaryTipHideTimer: number | undefined;
+let secondaryTriggerHideTimer: number | undefined;
 let extensionContextLost = false;
 
 function ensureStyle(): void {
@@ -103,7 +106,8 @@ function ensureStyle(): void {
 
     #${BALL_ID} .${SECONDARY_TRIGGER_CLASS} {
       position: absolute;
-      top: 50%;
+      top: calc(100% + 6px);
+      left: 50%;
       width: 26px;
       height: 26px;
       border-radius: 50%;
@@ -118,25 +122,17 @@ function ensureStyle(): void {
       box-shadow: 0 5px 12px rgba(15, 23, 42, 0.24);
       opacity: 0;
       pointer-events: none;
-      transform: translateY(-50%) scale(0.92);
+      transform: translate(-50%, 0) scale(0.92);
       transition: opacity .18s ease, transform .18s ease, box-shadow .18s ease, background-color .18s ease;
       cursor: pointer;
       padding: 0;
     }
 
-    #${BALL_ID}[data-side="right"] .${SECONDARY_TRIGGER_CLASS} {
-      right: calc(100% + 8px);
-    }
-
-    #${BALL_ID}[data-side="left"] .${SECONDARY_TRIGGER_CLASS} {
-      left: calc(100% + 8px);
-    }
-
-    #${BALL_ID}:hover .${SECONDARY_TRIGGER_CLASS},
+    #${BALL_ID}.${SECONDARY_TRIGGER_OPEN_CLASS} .${SECONDARY_TRIGGER_CLASS},
     #${BALL_ID} .${SECONDARY_TRIGGER_CLASS}:focus-visible {
       opacity: 1;
       pointer-events: auto;
-      transform: translateY(-50%) scale(1);
+      transform: translate(-50%, 0) scale(1);
     }
 
     #${BALL_ID} .${SECONDARY_TRIGGER_CLASS}:hover {
@@ -148,6 +144,7 @@ function ensureStyle(): void {
     #${BALL_ID}.safeops-disabled .${SECONDARY_TRIGGER_CLASS} {
       opacity: 0;
       pointer-events: none;
+      transform: translate(-50%, 0) scale(0.92);
     }
 
     #${SUMMARY_TIP_ID} {
@@ -257,6 +254,7 @@ function markExtensionContextLost(ball?: HTMLDivElement): void {
   if (!ball) {
     return;
   }
+  hideSecondaryTrigger(ball);
   updateBallState(ball, "disabled");
   hideSummaryTip();
 }
@@ -291,6 +289,34 @@ function clearSummaryTipHideTimer(): void {
     window.clearTimeout(summaryTipHideTimer);
     summaryTipHideTimer = undefined;
   }
+}
+
+function clearSecondaryTriggerHideTimer(): void {
+  if (typeof secondaryTriggerHideTimer === "number") {
+    window.clearTimeout(secondaryTriggerHideTimer);
+    secondaryTriggerHideTimer = undefined;
+  }
+}
+
+function showSecondaryTrigger(ball: HTMLDivElement): void {
+  if (ball.classList.contains("safeops-disabled")) {
+    return;
+  }
+
+  clearSecondaryTriggerHideTimer();
+  ball.classList.add(SECONDARY_TRIGGER_OPEN_CLASS);
+}
+
+function hideSecondaryTrigger(ball: HTMLDivElement): void {
+  clearSecondaryTriggerHideTimer();
+  ball.classList.remove(SECONDARY_TRIGGER_OPEN_CLASS);
+}
+
+function scheduleSecondaryTriggerHide(ball: HTMLDivElement): void {
+  clearSecondaryTriggerHideTimer();
+  secondaryTriggerHideTimer = window.setTimeout(() => {
+    ball.classList.remove(SECONDARY_TRIGGER_OPEN_CLASS);
+  }, SECONDARY_TRIGGER_HIDE_DELAY_MS);
 }
 
 function ensureSummaryTip(): HTMLDivElement {
@@ -499,10 +525,36 @@ async function openSidePanel(ball: HTMLDivElement): Promise<void> {
 
 function bindSecondaryTrigger(ball: HTMLDivElement): void {
   const trigger = ensureSecondaryTriggerButton(ball);
+
+  ball.addEventListener("mouseenter", () => {
+    showSecondaryTrigger(ball);
+  });
+
+  ball.addEventListener("mouseleave", () => {
+    scheduleSecondaryTriggerHide(ball);
+  });
+
+  trigger.addEventListener("mouseenter", () => {
+    showSecondaryTrigger(ball);
+  });
+
+  trigger.addEventListener("mouseleave", () => {
+    scheduleSecondaryTriggerHide(ball);
+  });
+
+  trigger.addEventListener("focus", () => {
+    showSecondaryTrigger(ball);
+  });
+
+  trigger.addEventListener("blur", () => {
+    scheduleSecondaryTriggerHide(ball);
+  });
+
   trigger.addEventListener("click", (event) => {
     event.preventDefault();
     event.stopPropagation();
     hideSummaryTip();
+    showSecondaryTrigger(ball);
     void openSidePanel(ball);
   });
 }
@@ -517,6 +569,7 @@ function enableDrag(ball: HTMLDivElement): void {
 
   ball.addEventListener("mousedown", (event) => {
     hideSummaryTip();
+    hideSecondaryTrigger(ball);
     pointerDown = true;
     moved = false;
     startX = event.clientX;
@@ -602,6 +655,7 @@ function updateBallState(ball: HTMLDivElement, state: BallVisualState): void {
   ball.classList.remove("safeops-listening", "safeops-alert", "safeops-disabled");
   clearBallTitle(ball);
   if (state === "disabled") {
+    hideSecondaryTrigger(ball);
     ball.classList.add("safeops-disabled");
     return;
   }
