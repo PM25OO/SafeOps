@@ -5,6 +5,7 @@ import { getStorageLocal, loadSettings, saveLatestContext, setStorageLocal } fro
 const BALL_ID = "safeops-floating-ball";
 const SAFEOPS_STYLE_ID = "safeops-floating-style";
 const BALL_LOGO_CLASS = "safeops-ball-logo";
+const SECONDARY_TRIGGER_CLASS = "safeops-secondary-trigger";
 const SUMMARY_TIP_ID = "safeops-summary-tip";
 const SUMMARY_TIP_VISIBLE_CLASS = "visible";
 const BALL_POSITION_KEY = "safeopsFloatingBallPosition";
@@ -53,6 +54,7 @@ function ensureStyle(): void {
       opacity: 0.92;
       transition: opacity .2s ease, box-shadow .2s ease, border-color .2s ease, background-color .2s ease, left .2s ease, right .2s ease, top .2s ease;
       user-select: none;
+      overflow: visible;
       box-shadow: 0 6px 14px rgba(15, 23, 42, 0.24);
     }
 
@@ -96,6 +98,55 @@ function ensureStyle(): void {
     #${BALL_ID}.dragging {
       transition: none;
       cursor: grabbing;
+    }
+
+    #${BALL_ID} .${SECONDARY_TRIGGER_CLASS} {
+      position: absolute;
+      top: 50%;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 1px solid rgba(59, 130, 246, 0.55);
+      background: rgba(248, 250, 252, 0.98);
+      color: #1d4ed8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      line-height: 1;
+      box-shadow: 0 5px 12px rgba(15, 23, 42, 0.24);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-50%) scale(0.92);
+      transition: opacity .18s ease, transform .18s ease, box-shadow .18s ease, background-color .18s ease;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    #${BALL_ID}[data-side="right"] .${SECONDARY_TRIGGER_CLASS} {
+      right: calc(100% + 8px);
+    }
+
+    #${BALL_ID}[data-side="left"] .${SECONDARY_TRIGGER_CLASS} {
+      left: calc(100% + 8px);
+    }
+
+    #${BALL_ID}:hover .${SECONDARY_TRIGGER_CLASS},
+    #${BALL_ID} .${SECONDARY_TRIGGER_CLASS}:focus-visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(-50%) scale(1);
+    }
+
+    #${BALL_ID} .${SECONDARY_TRIGGER_CLASS}:hover {
+      background: #eff6ff;
+      box-shadow: 0 6px 14px rgba(30, 64, 175, 0.32);
+    }
+
+    #${BALL_ID}.dragging .${SECONDARY_TRIGGER_CLASS},
+    #${BALL_ID}.safeops-disabled .${SECONDARY_TRIGGER_CLASS} {
+      opacity: 0;
+      pointer-events: none;
     }
 
     #${SUMMARY_TIP_ID} {
@@ -353,6 +404,9 @@ function ensureFloatingBall(): HTMLDivElement {
   let ball = document.getElementById(BALL_ID) as HTMLDivElement | null;
   if (ball) {
     clearBallTitle(ball);
+    if (!ball.dataset.side) {
+      ball.dataset.side = "right";
+    }
     return ball;
   }
 
@@ -364,6 +418,7 @@ function ensureFloatingBall(): HTMLDivElement {
   svgElement.setAttribute("aria-hidden", "true");
   svgElement.setAttribute("focusable", "false");
   ball.appendChild(document.importNode(svgElement, true));
+  ball.dataset.side = "right";
   clearBallTitle(ball);
   document.documentElement.appendChild(ball);
   return ball;
@@ -380,12 +435,14 @@ function normalizeTop(top: number): number {
 async function restoreBallPosition(ball: HTMLDivElement): Promise<void> {
   const stored = await getStorageLocal<BallPosition>(BALL_POSITION_KEY);
   if (!stored) {
+    ball.dataset.side = "right";
     return;
   }
 
   ball.style.top = `${normalizeTop(stored.top)}px`;
   ball.style.left = stored.side === "left" ? `${BALL_EDGE_GAP}px` : "auto";
   ball.style.right = stored.side === "right" ? `${BALL_EDGE_GAP}px` : "auto";
+  ball.dataset.side = stored.side;
 }
 
 function snapToEdge(ball: HTMLDivElement): void {
@@ -402,9 +459,51 @@ function snapToEdge(ball: HTMLDivElement): void {
     ball.style.right = `${BALL_EDGE_GAP}px`;
     ball.style.left = "auto";
   }
+  ball.dataset.side = side;
 
   void setStorageLocal<BallPosition>(BALL_POSITION_KEY, { side, top });
   syncSummaryTipPosition(ball);
+}
+
+function ensureSecondaryTriggerButton(ball: HTMLDivElement): HTMLButtonElement {
+  const existing = ball.querySelector(`.${SECONDARY_TRIGGER_CLASS}`) as HTMLButtonElement | null;
+  if (existing) {
+    return existing;
+  }
+
+  const trigger = document.createElement("button");
+  trigger.type = "button";
+  trigger.className = SECONDARY_TRIGGER_CLASS;
+  trigger.setAttribute("aria-label", "打开 SidePanel");
+  trigger.innerHTML = "↗";
+  ball.appendChild(trigger);
+  return trigger;
+}
+
+async function openSidePanel(ball: HTMLDivElement): Promise<void> {
+  try {
+    await sendMessage<{ opened: boolean }>({
+      type: "OPEN_SIDE_PANEL",
+      traceId: crypto.randomUUID(),
+    });
+  } catch (error) {
+    if (isContextInvalidatedError(error)) {
+      markExtensionContextLost(ball);
+      return;
+    }
+
+    console.warn("[SafeOps] Open SidePanel failed:", error);
+  }
+}
+
+function bindSecondaryTrigger(ball: HTMLDivElement): void {
+  const trigger = ensureSecondaryTriggerButton(ball);
+  trigger.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    hideSummaryTip();
+    void openSidePanel(ball);
+  });
 }
 
 function enableDrag(ball: HTMLDivElement): void {
@@ -621,6 +720,7 @@ async function bootstrap(): Promise<void> {
   const ball = ensureFloatingBall();
   await restoreBallPosition(ball);
   enableDrag(ball);
+  bindSecondaryTrigger(ball);
   bindSummaryTipHover(ball);
   bindSingleClickToggle(ball, context);
   bindStorageSync(ball, context);

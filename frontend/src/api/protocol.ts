@@ -3,6 +3,7 @@ export type MessageType =
   | "PARSE_DOM"
   | "ANALYZE_ALERT"
   | "ANALYZE_RESULT"
+  | "OPEN_SIDE_PANEL"
   | "LOAD_SETTINGS"
   | "GET_DEFAULT_SETTINGS"
   | "UPDATE_SETTINGS"

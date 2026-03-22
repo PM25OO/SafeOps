@@ -21,7 +21,7 @@ SafeOps AI 是一个以浏览器插件为入口的安全运维辅助系统：
 - ✅ Popup：全局开关、连接状态、今日统计、快捷入口
 - ✅ Options：后端地址、动作白名单、DOM规则JSON导入
 - ✅ Floating Ball：高危高亮、呼吸灯、拖拽贴边、单击切换监听、摘要提示框
-- 🟡 SidePanel：轻量只读版计划在 Phase 2 回归
+- 🟡 SidePanel：已支持悬浮球 hover 分裂按钮触发，轻量只读页继续在 Phase 2 完善
 - ✅ Backend：`/analyze`、`/health`、`/health/llm`、`/audit/recent`
 - ✅ 审计：后端 JSONL 审计落盘 + 前端审计页查看
 
@@ -115,8 +115,9 @@ FastAPI + LangGraph
 2. 在插件 Popup 中确认“自动监听”已启用
 3. 打开任意页面触发 content script
 4. 页面出现悬浮球；高危内容会高亮
-5. 单击悬浮球可开启/关闭监听；收到摘要后会在悬浮球旁显示提示框
-6. 在 Popup 中点击“历史审计日志”查看审计记录
+5. 单击悬浮球可开启/关闭监听；hover 悬浮球会分裂二级按钮，可点击打开 SidePanel
+6. 收到摘要后会在悬浮球旁显示提示框
+7. 在 Popup 中点击“历史审计日志”查看审计记录
 
 ---
 

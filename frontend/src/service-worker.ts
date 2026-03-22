@@ -18,6 +18,7 @@ import {
 
 const router = new MessageRouter();
 const EXTENSION_CONTEXT_INVALIDATED_ERROR = "Extension context invalidated.";
+const DEFAULT_SIDE_PANEL_PATH = "audit.html";
 
 function isContextInvalidatedError(error: unknown): boolean {
   return error instanceof Error && /Extension context invalidated/i.test(error.message);
@@ -36,6 +37,44 @@ function buildRequestHeaders(_settings: PluginSettings): Record<string, string> 
   return {
     "Content-Type": "application/json",
   };
+}
+
+function setSidePanelOptions(options: chrome.sidePanel.PanelOptions): Promise<void> {
+  return new Promise((resolve, reject) => {
+    chrome.sidePanel.setOptions(options, () => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
+      resolve();
+    });
+  });
+}
+
+function openSidePanel(options: chrome.sidePanel.OpenOptions): Promise<void> {
+  return new Promise((resolve, reject) => {
+    chrome.sidePanel.open(options, () => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
+      resolve();
+    });
+  });
+}
+
+async function openSidePanelForTab(tabId: number): Promise<void> {
+  if (!chrome.sidePanel?.setOptions || !chrome.sidePanel?.open) {
+    throw new Error("SidePanel API is not available in current runtime.");
+  }
+
+  await setSidePanelOptions({
+    tabId,
+    path: DEFAULT_SIDE_PANEL_PATH,
+    enabled: true,
+  });
+
+  await openSidePanel({ tabId });
 }
 
 async function getBackendHealth(settings: PluginSettings): Promise<{ backendConnected: boolean; llmConnected: boolean; llmMode?: string }> {
@@ -95,6 +134,20 @@ router.register("TEST_BACKEND_CONNECTION", async (message) => {
   };
 
   return getBackendHealth(merged);
+});
+
+router.register("OPEN_SIDE_PANEL", async (_message, sender) => {
+  const tabId = sender?.tab?.id;
+  if (typeof tabId !== "number") {
+    throw new Error("Cannot resolve sender tab id for SidePanel open.");
+  }
+
+  await openSidePanelForTab(tabId);
+  return {
+    opened: true,
+    tabId,
+    path: DEFAULT_SIDE_PANEL_PATH,
+  };
 });
 
 router.register("ANALYZE_ALERT", async (message: ExtensionMessage) => {

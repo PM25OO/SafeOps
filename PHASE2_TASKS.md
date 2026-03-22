@@ -64,7 +64,7 @@
 | STB-2.2 | ⬜ | 前端后端调用超时/重试/错误码标准化 | `frontend/src/service-worker.ts`, `frontend/src/api/protocol.ts` | `npm test -- --runInBand` + `npm run build` | `feat(stability): add resilient backend request handling` |
 | STB-2.3 | ⬜ | 前端状态提示一致化（避免重复/冲突文案） | `frontend/src/content-script.ts`, `frontend/src/popup.ts`, `frontend/src/options.ts` | `npm run build` | `fix(ui): normalize runtime status messaging` |
 | STB-2.4 | ⬜ | 后端错误分级与可观测日志字段统一 | `backend/app/main.py`, `backend/app/orchestration/workflow.py` | `python -m pytest -q` | `refactor(backend): standardize error classification and logging` |
-| UI-2.0 | ⬜ | 悬浮球 hover 分裂二级按钮并接入 SidePanel 触发 | `frontend/src/content-script.ts`, `frontend/src/service-worker.ts`, `frontend/src/manifest.json` | `npm run build` | `feat(sidepanel): add hover-split secondary trigger from floating ball` |
+| UI-2.0 | ✅ | 悬浮球 hover 分裂二级按钮并接入 SidePanel 触发 | `frontend/src/content-script.ts`, `frontend/src/service-worker.ts`, `frontend/src/manifest.json` | `npm run build` | `feat(sidepanel): add hover-split secondary trigger from floating ball` |
 | UI-2.1 | ⬜ | 轻量 SidePanel 页面骨架回归（仅信息展示） | `frontend/src/sidepanel.html`, `frontend/src/sidepanel.ts`, `frontend/src/manifest.json` | `npm run build` | `feat(sidepanel): restore lightweight info panel shell` |
 | UI-2.2 | ⬜ | SidePanel 展示最新 Context + AI 摘要（只读） | `frontend/src/sidepanel.ts`, `frontend/src/state/settings.ts` | `npm test -- --runInBand` + `npm run build` | `feat(sidepanel): render latest context and ai summary` |
 | TEST-2.1 | ⬜ | 后端 API 集成测试增强（健康/分析/异常路径） | `backend/tests/test_analyze_api.py`, `backend/tests/` | `python -m pytest -q` | `test(api): extend backend integration coverage` |
