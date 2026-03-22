@@ -17,6 +17,19 @@ import {
 } from "./state/settings";
 
 const router = new MessageRouter();
+const EXTENSION_CONTEXT_INVALIDATED_ERROR = "Extension context invalidated.";
+
+function isContextInvalidatedError(error: unknown): boolean {
+  return error instanceof Error && /Extension context invalidated/i.test(error.message);
+}
+
+function normalizeRouterError(error: unknown): string {
+  if (isContextInvalidatedError(error)) {
+    return EXTENSION_CONTEXT_INVALIDATED_ERROR;
+  }
+
+  return error instanceof Error ? error.message : "Unknown error";
+}
 
 function buildRequestHeaders(_settings: PluginSettings): Record<string, string> {
   void _settings;
@@ -163,7 +176,7 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, _sender, sendRe
     .handle(message, _sender)
     .then(sendResponse)
     .catch((error) => {
-      sendResponse({ ok: false, error: error instanceof Error ? error.message : "Unknown error" });
+      sendResponse({ ok: false, error: normalizeRouterError(error) });
     });
 
   return true;

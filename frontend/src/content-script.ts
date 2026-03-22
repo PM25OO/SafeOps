@@ -26,6 +26,7 @@ interface BallPosition {
 
 let latestSummaryText = "";
 let summaryTipHideTimer: number | undefined;
+let extensionContextLost = false;
 
 function ensureStyle(): void {
   if (document.getElementById(SAFEOPS_STYLE_ID)) {
@@ -195,6 +196,19 @@ function isContextInvalidatedError(error: unknown): boolean {
   return error instanceof Error && /Extension context invalidated/i.test(error.message);
 }
 
+function createContextInvalidatedError(): Error {
+  return new Error("Extension context invalidated.");
+}
+
+function markExtensionContextLost(ball?: HTMLDivElement): void {
+  extensionContextLost = true;
+  if (!ball) {
+    return;
+  }
+  updateBallState(ball, "disabled");
+  hideSummaryTip();
+}
+
 function normalizeDecisionSummary(summary: string): string {
   const normalizedLines = summary
     .replace(/\r\n?/g, "\n")
@@ -299,15 +313,21 @@ function showSummaryTip(ball: HTMLDivElement, summary: string, autoHideMs?: numb
 
 function sendMessage<T>(message: ExtensionMessage): Promise<T> {
   return new Promise((resolve, reject) => {
-    if (!chrome?.runtime?.id) {
-      reject(new Error("Extension context invalidated."));
+    if (extensionContextLost || !chrome?.runtime?.id) {
+      reject(createContextInvalidatedError());
       return;
     }
 
     try {
       chrome.runtime.sendMessage(message, (response) => {
         if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
+          const runtimeError = new Error(chrome.runtime.lastError.message);
+          if (isContextInvalidatedError(runtimeError)) {
+            markExtensionContextLost();
+            reject(createContextInvalidatedError());
+            return;
+          }
+          reject(runtimeError);
           return;
         }
 
@@ -495,6 +515,12 @@ function updateBallState(ball: HTMLDivElement, state: BallVisualState): void {
 }
 
 async function analyzeAndApplyState(ball: HTMLDivElement, settings: PluginSettings, context: ParsedAlertContext): Promise<void> {
+  if (extensionContextLost) {
+    updateBallState(ball, "disabled");
+    hideSummaryTip();
+    return;
+  }
+
   if (!settings.pluginEnabled) {
     updateBallState(ball, "disabled");
     hideSummaryTip();
@@ -503,7 +529,7 @@ async function analyzeAndApplyState(ball: HTMLDivElement, settings: PluginSettin
 
   updateBallState(ball, shouldHighlight(context) ? "alert" : "listening");
 
-  const result = await analyzeIfEnabled(context);
+  const result = await analyzeIfEnabled(ball, context);
   if (result?.recommendation === "block_and_isolate") {
     updateBallState(ball, "alert");
   }
@@ -531,8 +557,7 @@ async function toggleMonitoring(ball: HTMLDivElement, context: ParsedAlertContex
     await analyzeAndApplyState(ball, updated, context);
   } catch (error) {
     if (isContextInvalidatedError(error)) {
-      updateBallState(ball, "disabled");
-      hideSummaryTip();
+      markExtensionContextLost(ball);
       return;
     }
 
@@ -543,6 +568,10 @@ async function toggleMonitoring(ball: HTMLDivElement, context: ParsedAlertContex
 
 function bindStorageSync(ball: HTMLDivElement, context: ParsedAlertContext): void {
   chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (extensionContextLost) {
+      return;
+    }
+
     if (areaName !== "sync" || !changes.pluginSettings) {
       return;
     }
@@ -566,7 +595,7 @@ function bindSingleClickToggle(ball: HTMLDivElement, context: ParsedAlertContext
   });
 }
 
-async function analyzeIfEnabled(context: ParsedAlertContext): Promise<AnalyzeResultView | null> {
+async function analyzeIfEnabled(ball: HTMLDivElement, context: ParsedAlertContext): Promise<AnalyzeResultView | null> {
   try {
     return await sendMessage<AnalyzeResultView>({
       type: "ANALYZE_ALERT",
@@ -574,9 +603,12 @@ async function analyzeIfEnabled(context: ParsedAlertContext): Promise<AnalyzeRes
       traceId: crypto.randomUUID(),
     });
   } catch (error) {
-    if (!isContextInvalidatedError(error)) {
-      console.warn("[SafeOps] Analyze failed:", error);
+    if (isContextInvalidatedError(error)) {
+      markExtensionContextLost(ball);
+      return null;
     }
+
+    console.warn("[SafeOps] Analyze failed:", error);
     return null;
   }
 }
