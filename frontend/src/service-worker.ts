@@ -23,7 +23,6 @@ const DEFAULT_SIDE_PANEL_PATH = "audit.html";
 const BACKEND_REQUEST_TIMEOUT_MS = 8000;
 const BACKEND_MAX_RETRIES = 1;
 const BACKEND_RETRY_DELAY_MS = 250;
-const SIDE_PANEL_RETRY_HINT = /(no active side panel|setOptions|not enabled|no side panel)/i;
 
 class BackendRequestError extends Error {
   constructor(
@@ -169,119 +168,40 @@ async function requestBackendJson<T>(
   throw new BackendRequestError("BACKEND_NETWORK", "Backend request exhausted all retries.", undefined, false, retries + 1);
 }
 
-function openSidePanel(options: chrome.sidePanel.OpenOptions): Promise<void> {
-  return new Promise((resolve, reject) => {
-    chrome.sidePanel.open(options, () => {
-      if (chrome.runtime.lastError) {
-        reject(new Error(chrome.runtime.lastError.message));
-        return;
-      }
-      resolve();
-    });
-  });
-}
+function handleOpenSidePanelMessage(
+  sender: chrome.runtime.MessageSender | undefined,
+  sendResponse: (response: { ok: boolean; data?: unknown; error?: string }) => void,
+): void {
+  const tabId = sender?.tab?.id;
 
-function setSidePanelOptions(options: chrome.sidePanel.PanelOptions): Promise<void> {
-  return new Promise((resolve, reject) => {
-    chrome.sidePanel.setOptions(options, () => {
-      if (chrome.runtime.lastError) {
-        reject(new Error(chrome.runtime.lastError.message));
-        return;
-      }
-      resolve();
-    });
-  });
-}
-
-async function enableSidePanelForTab(tabId: number): Promise<void> {
-  if (!chrome.sidePanel?.setOptions) {
+  if (!chrome.sidePanel?.open) {
+    sendResponse({ ok: false, error: "SidePanel API is not available in current runtime." });
     return;
   }
 
-  await setSidePanelOptions({
-    tabId,
-    path: DEFAULT_SIDE_PANEL_PATH,
-    enabled: true,
-  });
-}
-
-function shouldRetryOpenWithSetOptions(message: string): boolean {
-  return SIDE_PANEL_RETRY_HINT.test(message);
-}
-
-function bootstrapSidePanelTabSync(): void {
-  if (!chrome.sidePanel?.setOptions || !chrome.tabs?.query) {
+  if (typeof tabId !== "number") {
+    sendResponse({ ok: false, error: "Cannot resolve sender tab id for SidePanel open." });
     return;
   }
 
-  const syncTab = (tabId?: number): void => {
-    if (typeof tabId !== "number") {
-      return;
-    }
-
-    void enableSidePanelForTab(tabId).catch(() => {
-      // 某些受限页面无法设置 SidePanel，忽略并按需在打开时重试。
-    });
-  };
-
-  chrome.tabs.onActivated?.addListener(({ tabId }) => {
-    syncTab(tabId);
-  });
-
-  chrome.tabs.onUpdated?.addListener((tabId, changeInfo) => {
-    if (changeInfo.status === "loading") {
-      syncTab(tabId);
-    }
-  });
-
-  chrome.tabs.query({}, (tabs) => {
+  // 官方建议：open() 只能在用户交互触发链路中调用。
+  // 这里直接在 onMessage 回调里首跳执行，避免额外 async/await 包装造成手势链路丢失。
+  chrome.sidePanel.open({ tabId }, () => {
     if (chrome.runtime.lastError) {
+      sendResponse({ ok: false, error: chrome.runtime.lastError.message });
       return;
     }
 
-    for (const tab of tabs) {
-      syncTab(tab.id);
-    }
+    sendResponse({
+      ok: true,
+      data: {
+        opened: true,
+        tabId,
+        path: DEFAULT_SIDE_PANEL_PATH,
+      },
+    });
   });
 }
-
-async function openSidePanelForTab(tabId: number, windowId?: number): Promise<void> {
-  if (!chrome.sidePanel?.setOptions || !chrome.sidePanel?.open) {
-    throw new Error("SidePanel API is not available in current runtime.");
-  }
-
-  // 优先直接打开，避免在用户手势链路中先执行异步 setOptions 导致手势丢失。
-  try {
-    await openSidePanel({ tabId });
-    return;
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown side panel open error";
-
-    if (shouldRetryOpenWithSetOptions(message)) {
-      try {
-        await enableSidePanelForTab(tabId);
-        await openSidePanel({ tabId });
-        return;
-      } catch {
-        // 保留原始错误并继续走后备路径。
-      }
-    }
-
-    // 某些运行时场景下 tabId 可能不可用，退化为 windowId 打开。
-    if (typeof windowId === "number") {
-      try {
-        await openSidePanel({ windowId });
-        return;
-      } catch {
-        // 保留原始错误信息，便于上层定位。
-      }
-    }
-
-    throw new Error(message);
-  }
-}
-
-bootstrapSidePanelTabSync();
 
 async function getBackendHealth(settings: PluginSettings): Promise<{ backendConnected: boolean; llmConnected: boolean; llmMode?: string }> {
   let backendConnected = false;
@@ -350,21 +270,6 @@ router.register("TEST_BACKEND_CONNECTION", async (message) => {
   };
 
   return getBackendHealth(merged);
-});
-
-router.register("OPEN_SIDE_PANEL", async (_message, sender) => {
-  const tabId = sender?.tab?.id;
-  const windowId = sender?.tab?.windowId;
-  if (typeof tabId !== "number") {
-    throw new Error("Cannot resolve sender tab id for SidePanel open.");
-  }
-
-  await openSidePanelForTab(tabId, windowId);
-  return {
-    opened: true,
-    tabId,
-    path: DEFAULT_SIDE_PANEL_PATH,
-  };
 });
 
 router.register("ANALYZE_ALERT", async (message: ExtensionMessage) => {
@@ -440,6 +345,11 @@ router.register("EXECUTE_ACTION", async (message) => {
 });
 
 chrome.runtime.onMessage.addListener((message: ExtensionMessage, _sender, sendResponse) => {
+  if (message.type === "OPEN_SIDE_PANEL") {
+    handleOpenSidePanelMessage(_sender, sendResponse);
+    return true;
+  }
+
   router
     .handle(message, _sender)
     .then(sendResponse)
