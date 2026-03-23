@@ -23,6 +23,7 @@ const DEFAULT_SIDE_PANEL_PATH = "audit.html";
 const BACKEND_REQUEST_TIMEOUT_MS = 8000;
 const BACKEND_MAX_RETRIES = 1;
 const BACKEND_RETRY_DELAY_MS = 250;
+const SIDE_PANEL_RETRY_HINT = /(no active side panel|setOptions|not enabled|no side panel)/i;
 
 class BackendRequestError extends Error {
   constructor(
@@ -180,6 +181,70 @@ function openSidePanel(options: chrome.sidePanel.OpenOptions): Promise<void> {
   });
 }
 
+function setSidePanelOptions(options: chrome.sidePanel.PanelOptions): Promise<void> {
+  return new Promise((resolve, reject) => {
+    chrome.sidePanel.setOptions(options, () => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
+      resolve();
+    });
+  });
+}
+
+async function enableSidePanelForTab(tabId: number): Promise<void> {
+  if (!chrome.sidePanel?.setOptions) {
+    return;
+  }
+
+  await setSidePanelOptions({
+    tabId,
+    path: DEFAULT_SIDE_PANEL_PATH,
+    enabled: true,
+  });
+}
+
+function shouldRetryOpenWithSetOptions(message: string): boolean {
+  return SIDE_PANEL_RETRY_HINT.test(message);
+}
+
+function bootstrapSidePanelTabSync(): void {
+  if (!chrome.sidePanel?.setOptions || !chrome.tabs?.query) {
+    return;
+  }
+
+  const syncTab = (tabId?: number): void => {
+    if (typeof tabId !== "number") {
+      return;
+    }
+
+    void enableSidePanelForTab(tabId).catch(() => {
+      // 某些受限页面无法设置 SidePanel，忽略并按需在打开时重试。
+    });
+  };
+
+  chrome.tabs.onActivated?.addListener(({ tabId }) => {
+    syncTab(tabId);
+  });
+
+  chrome.tabs.onUpdated?.addListener((tabId, changeInfo) => {
+    if (changeInfo.status === "loading") {
+      syncTab(tabId);
+    }
+  });
+
+  chrome.tabs.query({}, (tabs) => {
+    if (chrome.runtime.lastError) {
+      return;
+    }
+
+    for (const tab of tabs) {
+      syncTab(tab.id);
+    }
+  });
+}
+
 async function openSidePanelForTab(tabId: number, windowId?: number): Promise<void> {
   if (!chrome.sidePanel?.setOptions || !chrome.sidePanel?.open) {
     throw new Error("SidePanel API is not available in current runtime.");
@@ -191,6 +256,16 @@ async function openSidePanelForTab(tabId: number, windowId?: number): Promise<vo
     return;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown side panel open error";
+
+    if (shouldRetryOpenWithSetOptions(message)) {
+      try {
+        await enableSidePanelForTab(tabId);
+        await openSidePanel({ tabId });
+        return;
+      } catch {
+        // 保留原始错误并继续走后备路径。
+      }
+    }
 
     // 某些运行时场景下 tabId 可能不可用，退化为 windowId 打开。
     if (typeof windowId === "number") {
@@ -205,6 +280,8 @@ async function openSidePanelForTab(tabId: number, windowId?: number): Promise<vo
     throw new Error(message);
   }
 }
+
+bootstrapSidePanelTabSync();
 
 async function getBackendHealth(settings: PluginSettings): Promise<{ backendConnected: boolean; llmConnected: boolean; llmMode?: string }> {
   let backendConnected = false;
