@@ -532,7 +532,9 @@ function bindSecondaryTrigger(ball: HTMLDivElement): void {
     scheduleSecondaryTriggerHide(ball);
   });
 
-  trigger.addEventListener("click", () => {
+  trigger.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
     chrome.runtime.sendMessage({ type: "OPEN_SIDE_PANEL" });
   });
 }
