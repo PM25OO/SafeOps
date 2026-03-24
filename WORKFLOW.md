@@ -175,3 +175,136 @@
 - 功能拆解与状态：见 `PHASE1_TASKS.md`
 - 产品与运行说明：见 `README.md`
 - 环境细节：见 `SETUP.md`
+
+---
+
+## 11. 常见陷阱与教训库
+
+### 11.1 Chrome sidePanel.open() 用户交互链丢失
+
+**教训来源**：修复二级悬浮球无法打开 sidePanel 的 bug（2026-03-24）
+
+**问题描述**：
+```typescript
+// ❌ 错误：async IIFE 会打破用户交互链
+chrome.runtime.onMessage.addListener((message, sender) => {
+  if (message.type === "OPEN_SIDE_PANEL") {
+    (async () => {
+      await chrome.sidePanel.open({ tabId });
+    })();
+  }
+});
+```
+
+**根本原因**：
+- Chrome 强制要求 `sidePanel.open()` 必须在用户交互的**直接同步回调**中调用
+- 使用 `async`/`await` 会将控制流推入微任务队列，导致丢失用户交互上下文
+- 结果：API 调用被拒绝，无任何错误提示或异常
+
+**修复方案**：
+```typescript
+// ✅ 正确：同步直接调用，保留用户交互链
+chrome.runtime.onMessage.addListener((message, sender) => {
+  if (message.type === "OPEN_SIDE_PANEL") {
+    const tabId = sender.tab?.id;
+    if (!tabId) return true;
+    
+    void chrome.sidePanel.open({ tabId });
+    void chrome.sidePanel.setOptions({
+      tabId,
+      path: "audit.html",
+      enabled: true,
+    });
+    return true;
+  }
+});
+```
+
+**核心原则**：
+- ❌ 永远不要用 async IIFE 包装需要用户交互链的 Chrome API 调用
+- ✅ 优先级：用户交互链 > await 链
+- ✅ 如果需要异步操作，先立即调用 API，后处理其他逻辑
+
+---
+
+### 11.2 CSS pointer-events 与内联样式优先级陷阱
+
+**教训来源**：修复二级悬浮球按钮无法点击的 bug（2026-03-24）
+
+**问题描述**：
+```css
+#safeops-floating-ball {
+  pointer-events: none;
+}
+#safeops-floating-ball.open {
+  pointer-events: auto;
+}
+#safeops-floating-ball.open .secondary {
+  pointer-events: auto;
+}
+```
+
+```javascript
+// ❌ 错误：仅依赖 CSS 类控制 pointer-events
+const trigger = document.createElement("button");
+trigger.className = "secondary";
+ball.appendChild(trigger);
+// 此时即使 ball 添加了 .open 类，trigger 的 pointer-events 仍可能是 none
+```
+
+**根本原因**：
+- CSS 选择器优先级问题：父级 `.open` 下的子级选择器可能被其他更高优先级规则覆盖
+- CSS 级联不够稳定，特别是在复杂的嵌套选择器中
+- 结果：按钮可见但无法点击
+
+**修复方案**：
+```typescript
+// ✅ 正确：强制设置内联样式，确保最高优先级
+const trigger = document.createElement("button");
+trigger.className = "secondary";
+// 直接在 style 属性上设置，绕过 CSS 优先级问题
+trigger.style.pointerEvents = "auto";
+ball.appendChild(trigger);
+```
+
+**核心原则**：
+- 🎯 `pointer-events` 是"可交互性"属性，应该在需要交互的元素上**硬编码**
+- ✅ 对交互关键的样式，优先使用内联样式
+- ❌ 不要完全依赖 CSS 类级联来控制 `pointer-events: none/auto` 切换
+- 💡 如果用 CSS 类，配合内联样式作为 fallback/override
+
+**调试技巧**：
+```javascript
+// 诊断 pointer-events 是否真正生效
+console.log(getComputedStyle(element).pointerEvents);
+// 如果仍是 "none" 但应该是 "auto"，用内联样式强制设置
+element.style.pointerEvents = "auto";
+```
+
+---
+
+### 11.3 问题诊断最佳实践
+
+**教训来源**：调试二级按钮无响应（2026-03-24）
+
+**有效的诊断方法**：
+1. **分层诊断**：从表现层 → DOM 层 → 事件层 → API 层
+2. **添加策略性 console.log**：
+   - 在"用户交互链"关键点（如 click 事件）记日志
+   - 在"API 调用前"记日志
+   - 在"DOM 创建后"验证属性
+3. **验证 CSS 生效**：
+   ```javascript
+   console.log(getComputedStyle(element).pointerEvents);
+   ```
+4. **验证事件监听**：
+   ```javascript
+   trigger.addEventListener("click", () => {
+     console.log("Click detected!");
+   });
+   ```
+
+**反面教学**：
+- ❌ 不要猜测 CSS 或 API 行为，要验证
+- ❌ 不要依赖"看起来应该工作"就认为它工作
+- ✅ 显式验证关键路径上的每个假设
