@@ -24,6 +24,13 @@ const BACKEND_REQUEST_TIMEOUT_MS = 8000;
 const BACKEND_MAX_RETRIES = 1;
 const BACKEND_RETRY_DELAY_MS = 250;
 
+function ensureGlobalSidePanelOptions(): void {
+  void chrome.sidePanel.setOptions({
+    path: DEFAULT_SIDE_PANEL_PATH,
+    enabled: true,
+  });
+}
+
 class BackendRequestError extends Error {
   constructor(
     public readonly code: BackendErrorCode,
@@ -309,20 +316,32 @@ router.register("EXECUTE_ACTION", async (message) => {
   };
 });
 
+chrome.runtime.onInstalled.addListener(() => {
+  ensureGlobalSidePanelOptions();
+});
+
+chrome.runtime.onStartup.addListener(() => {
+  ensureGlobalSidePanelOptions();
+});
+
 chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender) => {
   if (message.type === "OPEN_SIDE_PANEL") {
+    const windowId = sender.tab?.windowId;
     const tabId = sender.tab?.id;
-    if (!tabId) {
+
+    // Ensure side panel behavior is global (window-level), not per-tab.
+    ensureGlobalSidePanelOptions();
+
+    // Must be called directly in user-gesture-triggered callback.
+    if (typeof windowId === "number") {
+      void chrome.sidePanel.open({ windowId });
       return true;
     }
 
-    // Direct synchronous call in response to user interaction
-    void chrome.sidePanel.open({ tabId });
-    void chrome.sidePanel.setOptions({
-      tabId,
-      path: DEFAULT_SIDE_PANEL_PATH,
-      enabled: true,
-    });
+    // Fallback for unexpected sender shape.
+    if (typeof tabId === "number") {
+      void chrome.sidePanel.open({ tabId });
+    }
     return true;
   }
 
