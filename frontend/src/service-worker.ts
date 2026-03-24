@@ -168,41 +168,6 @@ async function requestBackendJson<T>(
   throw new BackendRequestError("BACKEND_NETWORK", "Backend request exhausted all retries.", undefined, false, retries + 1);
 }
 
-function handleOpenSidePanelMessage(
-  sender: chrome.runtime.MessageSender | undefined,
-  sendResponse: (response: { ok: boolean; data?: unknown; error?: string }) => void,
-): void {
-  const tabId = sender?.tab?.id;
-
-  if (!chrome.sidePanel?.open) {
-    sendResponse({ ok: false, error: "SidePanel API is not available in current runtime." });
-    return;
-  }
-
-  if (typeof tabId !== "number") {
-    sendResponse({ ok: false, error: "Cannot resolve sender tab id for SidePanel open." });
-    return;
-  }
-
-  // 官方建议：open() 只能在用户交互触发链路中调用。
-  // 这里直接在 onMessage 回调里首跳执行，避免额外 async/await 包装造成手势链路丢失。
-  chrome.sidePanel.open({ tabId }, () => {
-    if (chrome.runtime.lastError) {
-      sendResponse({ ok: false, error: chrome.runtime.lastError.message });
-      return;
-    }
-
-    sendResponse({
-      ok: true,
-      data: {
-        opened: true,
-        tabId,
-        path: DEFAULT_SIDE_PANEL_PATH,
-      },
-    });
-  });
-}
-
 async function getBackendHealth(settings: PluginSettings): Promise<{ backendConnected: boolean; llmConnected: boolean; llmMode?: string }> {
   let backendConnected = false;
   let llmConnected = false;
@@ -344,18 +309,26 @@ router.register("EXECUTE_ACTION", async (message) => {
   };
 });
 
-chrome.runtime.onMessage.addListener((message: ExtensionMessage, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender) => {
   if (message.type === "OPEN_SIDE_PANEL") {
-    handleOpenSidePanelMessage(_sender, sendResponse);
+    const tabId = sender.tab?.id;
+    if (!tabId) {
+      return true;
+    }
+
+    // Direct synchronous call in response to user interaction
+    void chrome.sidePanel.open({ tabId });
+    void chrome.sidePanel.setOptions({
+      tabId,
+      path: DEFAULT_SIDE_PANEL_PATH,
+      enabled: true,
+    });
     return true;
   }
 
-  router
-    .handle(message, _sender)
-    .then(sendResponse)
-    .catch((error) => {
-      sendResponse({ ok: false, error: normalizeRouterError(error) });
-    });
+  (async () => {
+    await router.handle(message, sender);
+  })();
 
   return true;
 });

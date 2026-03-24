@@ -299,10 +299,6 @@ function clearSecondaryTriggerHideTimer(): void {
 }
 
 function showSecondaryTrigger(ball: HTMLDivElement): void {
-  if (ball.classList.contains("safeops-disabled")) {
-    return;
-  }
-
   clearSecondaryTriggerHideTimer();
   ball.classList.add(SECONDARY_TRIGGER_OPEN_CLASS);
 }
@@ -503,26 +499,10 @@ function ensureSecondaryTriggerButton(ball: HTMLDivElement): HTMLButtonElement {
   trigger.className = SECONDARY_TRIGGER_CLASS;
   trigger.setAttribute("aria-label", "打开 SidePanel");
   trigger.innerHTML = "↗";
+  // 强制设置 pointer-events，确保按钮在显示时可被点击
+  trigger.style.pointerEvents = "auto";
   ball.appendChild(trigger);
   return trigger;
-}
-
-async function openSidePanel(ball: HTMLDivElement): Promise<void> {
-  try {
-    await sendMessage<{ opened: boolean }>({
-      type: "OPEN_SIDE_PANEL",
-      traceId: crypto.randomUUID(),
-    });
-  } catch (error) {
-    if (isContextInvalidatedError(error)) {
-      markExtensionContextLost(ball);
-      return;
-    }
-
-    console.warn("[SafeOps] Open SidePanel failed:", error);
-    const detail = error instanceof Error ? error.message : "未知错误";
-    showSummaryTip(ball, `侧边栏打开失败：${detail}`, SUMMARY_TIP_AUTO_HIDE_MS);
-  }
 }
 
 function bindSecondaryTrigger(ball: HTMLDivElement): void {
@@ -552,12 +532,8 @@ function bindSecondaryTrigger(ball: HTMLDivElement): void {
     scheduleSecondaryTriggerHide(ball);
   });
 
-  trigger.addEventListener("click", (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    hideSummaryTip();
-    showSecondaryTrigger(ball);
-    void openSidePanel(ball);
+  trigger.addEventListener("click", () => {
+    chrome.runtime.sendMessage({ type: "OPEN_SIDE_PANEL" });
   });
 }
 
