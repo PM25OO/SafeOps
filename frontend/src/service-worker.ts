@@ -324,7 +324,7 @@ chrome.runtime.onStartup.addListener(() => {
   ensureGlobalSidePanelOptions();
 });
 
-chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender) => {
+chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendResponse) => {
   if (message.type === "OPEN_SIDE_PANEL") {
     const windowId = sender.tab?.windowId;
     const tabId = sender.tab?.id;
@@ -334,20 +334,40 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender) => {
 
     // Must be called directly in user-gesture-triggered callback.
     if (typeof windowId === "number") {
-      void chrome.sidePanel.open({ windowId });
+      void chrome.sidePanel
+        .open({ windowId })
+        .then(() => {
+          sendResponse({ ok: true, data: { opened: true } });
+        })
+        .catch((error) => {
+          sendResponse({ ok: false, error: normalizeRouterError(error) });
+        });
       return true;
     }
 
     // Fallback for unexpected sender shape.
     if (typeof tabId === "number") {
-      void chrome.sidePanel.open({ tabId });
+      void chrome.sidePanel
+        .open({ tabId })
+        .then(() => {
+          sendResponse({ ok: true, data: { opened: true } });
+        })
+        .catch((error) => {
+          sendResponse({ ok: false, error: normalizeRouterError(error) });
+        });
+      return true;
     }
+
+    sendResponse({ ok: false, error: "No sender tab/window information for opening side panel." });
     return true;
   }
 
-  (async () => {
-    await router.handle(message, sender);
-  })();
+  void (async () => {
+    const response = await router.handle(message, sender);
+    sendResponse(response);
+  })().catch((error) => {
+    sendResponse({ ok: false, error: normalizeRouterError(error) });
+  });
 
   return true;
 });
