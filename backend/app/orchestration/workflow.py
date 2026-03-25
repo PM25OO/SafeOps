@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import TypedDict
 
 from langgraph.graph import END, StateGraph
@@ -15,6 +16,24 @@ class AnalyzeState(TypedDict):
     request: AnalyzeRequest
     response: AnalyzeResponse | None
     audit_id: str | None
+
+
+@dataclass(slots=True)
+class WorkflowExecutionError(Exception):
+    error_code: str
+    error_category: str
+    stage: str
+    message: str
+    retryable: bool = False
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "error_code": self.error_code,
+            "error_category": self.error_category,
+            "stage": self.stage,
+            "message": self.message,
+            "retryable": self.retryable,
+        }
 
 
 class AnalysisWorkflow:
@@ -40,46 +59,120 @@ class AnalysisWorkflow:
         self.compiled_graph = graph.compile()
 
     def _run_rule_engine(self, state: AnalyzeState) -> AnalyzeState:
-        response = self.rule_engine.analyze(state["request"].payload)
-        return {"request": state["request"], "response": response, "audit_id": None}
+        try:
+            response = self.rule_engine.analyze(state["request"].payload)
+            return {"request": state["request"], "response": response, "audit_id": None}
+        except WorkflowExecutionError:
+            raise
+        except Exception as exc:
+            raise WorkflowExecutionError(
+                error_code="RULE_ENGINE_FAILURE",
+                error_category="agent_execution_error",
+                stage="rule_engine",
+                message="RuleEngineAgent 执行失败",
+            ) from exc
 
     def _run_ai_enhance(self, state: AnalyzeState) -> AnalyzeState:
-        response = state["response"]
-        if response is None:
-            raise RuntimeError("Missing response before AI enhancement")
+        try:
+            response = state["response"]
+            if response is None:
+                raise WorkflowExecutionError(
+                    error_code="WORKFLOW_STATE_INVALID",
+                    error_category="state_error",
+                    stage="ai_enhance",
+                    message="AI 增强阶段缺少上游响应",
+                )
 
-        ai_decision = self.llm_bridge.enhance(state["request"].payload, response)
-        response.ai_decision = ai_decision
+            ai_decision = self.llm_bridge.enhance(state["request"].payload, response)
+            response.ai_decision = ai_decision
 
-        if ai_decision.confidence >= 0.6:
-            response.recommendation = ai_decision.suggested_action
+            if ai_decision.confidence >= 0.6:
+                response.recommendation = ai_decision.suggested_action
 
-        return {"request": state["request"], "response": response, "audit_id": state["audit_id"]}
+            return {"request": state["request"], "response": response, "audit_id": state["audit_id"]}
+        except WorkflowExecutionError:
+            raise
+        except Exception as exc:
+            raise WorkflowExecutionError(
+                error_code="LLM_ENHANCE_FAILURE",
+                error_category="agent_execution_error",
+                stage="ai_enhance",
+                message="LLMBridgeAgent 执行失败",
+                retryable=True,
+            ) from exc
 
     def _run_policy_gate(self, state: AnalyzeState) -> AnalyzeState:
-        response = state["response"]
-        if response is None:
-            raise RuntimeError("Missing response before policy gate")
+        try:
+            response = state["response"]
+            if response is None:
+                raise WorkflowExecutionError(
+                    error_code="WORKFLOW_STATE_INVALID",
+                    error_category="state_error",
+                    stage="policy_gate",
+                    message="策略门控阶段缺少上游响应",
+                )
 
-        policy_decision = self.policy_agent.evaluate(state["request"].payload, response)
-        response.policy_decision = policy_decision
-        response.suggested_actions = self._build_suggested_actions(response.recommendation)
-        return {"request": state["request"], "response": response, "audit_id": state["audit_id"]}
+            policy_decision = self.policy_agent.evaluate(state["request"].payload, response)
+            response.policy_decision = policy_decision
+            response.suggested_actions = self._build_suggested_actions(response.recommendation)
+            return {"request": state["request"], "response": response, "audit_id": state["audit_id"]}
+        except WorkflowExecutionError:
+            raise
+        except Exception as exc:
+            raise WorkflowExecutionError(
+                error_code="POLICY_GATE_FAILURE",
+                error_category="agent_execution_error",
+                stage="policy_gate",
+                message="AuditPolicyAgent 执行失败",
+            ) from exc
 
     def _run_audit(self, state: AnalyzeState) -> AnalyzeState:
-        response = state["response"]
-        if response is None:
-            raise RuntimeError("Missing response before audit")
+        try:
+            response = state["response"]
+            if response is None:
+                raise WorkflowExecutionError(
+                    error_code="WORKFLOW_STATE_INVALID",
+                    error_category="state_error",
+                    stage="audit",
+                    message="审计阶段缺少上游响应",
+                )
 
-        audit_id = self.audit_agent.record(state["request"], response)
-        response.audit_id = audit_id
-        return {"request": state["request"], "response": response, "audit_id": audit_id}
+            audit_id = self.audit_agent.record(state["request"], response)
+            response.audit_id = audit_id
+            return {"request": state["request"], "response": response, "audit_id": audit_id}
+        except WorkflowExecutionError:
+            raise
+        except Exception as exc:
+            raise WorkflowExecutionError(
+                error_code="AUDIT_PERSIST_FAILURE",
+                error_category="persistence_error",
+                stage="audit",
+                message="审计写入失败",
+                retryable=True,
+            ) from exc
 
     def analyze(self, request: AnalyzeRequest) -> AnalyzeResponse:
-        output_state = self.compiled_graph.invoke({"request": request, "response": None, "audit_id": None})
+        try:
+            output_state = self.compiled_graph.invoke({"request": request, "response": None, "audit_id": None})
+        except WorkflowExecutionError:
+            raise
+        except Exception as exc:
+            raise WorkflowExecutionError(
+                error_code="WORKFLOW_EXECUTION_FAILURE",
+                error_category="workflow_runtime_error",
+                stage="orchestration",
+                message="分析编排执行失败",
+                retryable=True,
+            ) from exc
+
         response = output_state["response"]
         if response is None:
-            raise RuntimeError("Analysis workflow failed to produce response")
+            raise WorkflowExecutionError(
+                error_code="WORKFLOW_EMPTY_RESPONSE",
+                error_category="state_error",
+                stage="orchestration",
+                message="分析编排未生成响应",
+            )
         return response
 
     def llm_health(self) -> dict[str, object]:
