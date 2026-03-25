@@ -67,8 +67,8 @@
 | UI-2.0 | ✅ | 悬浮球 hover 分裂二级按钮并接入 SidePanel 触发 | `frontend/src/content-script.ts`, `frontend/src/service-worker.ts`, `frontend/src/manifest.json` | `npm run build` | `feat(sidepanel): add hover-split secondary trigger from floating ball` |
 | UI-2.1 | ⬜ | 轻量 SidePanel 页面骨架回归（仅信息展示） | `frontend/src/sidepanel.html`, `frontend/src/sidepanel.ts`, `frontend/src/manifest.json` | `npm run build` | `feat(sidepanel): restore lightweight info panel shell` |
 | UI-2.2 | ⬜ | SidePanel 展示最新 Context + AI 摘要（只读） | `frontend/src/sidepanel.ts`, `frontend/src/state/settings.ts` | `npm test -- --runInBand` + `npm run build` | `feat(sidepanel): render latest context and ai summary` |
-| TEST-2.1 | ⬜ | 后端 API 集成测试增强（健康/分析/异常路径） | `backend/tests/test_analyze_api.py`, `backend/tests/` | `python -m pytest -q` | `test(api): extend backend integration coverage` |
-| TEST-2.2 | ⬜ | 前端集成级测试（message-router + service-worker 调用链） | `frontend/tests/message-router.test.ts`, `frontend/tests/` | `npm test -- --runInBand` | `test(frontend): add integration-style message flow tests` |
+| TEST-2.1 | ✅ | 后端 API 集成测试增强（健康/分析/异常路径） | `backend/tests/test_analyze_api.py`, `backend/tests/` | `python -m pytest -q` | `test(api): extend backend integration coverage` |
+| TEST-2.2 | ✅ | 前端集成级测试（message-router + service-worker 调用链） | `frontend/tests/message-router.test.ts`, `frontend/tests/` | `npm test -- --runInBand` | `test(frontend): add integration-style message flow tests` |
 | TEST-2.3 | ⬜ | 建立稳定性回归命令清单与执行顺序 | `README.md`, `WORKFLOW.md` | `npm test -- --runInBand` + `python -m pytest -q` | `docs(test): define phase2 stability regression checklist` |
 | AUD-2.1 | ⬜ | 引入 SQLAlchemy/Alembic 与 PostgreSQL 配置（主路径） | `backend/requirements.txt`, `backend/app/` | `python -m pytest -q` | `feat(audit): add sqlalchemy and alembic dependencies` |
 | AUD-2.2 | ⬜ | 审计表模型 + Alembic 迁移脚本 | `backend/app/models/`, `backend/migrations/`, `backend/alembic.ini` | `python -m pytest -q` | `feat(database): add audit schema and alembic migration` |
