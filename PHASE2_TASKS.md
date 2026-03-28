@@ -70,7 +70,7 @@
 | TEST-2.1 | ✅ | 后端 API 集成测试增强（健康/分析/异常路径） | `backend/tests/test_analyze_api.py`, `backend/tests/` | `python -m pytest -q` | `test(api): extend backend integration coverage` |
 | TEST-2.2 | ✅ | 前端集成级测试（message-router + service-worker 调用链） | `frontend/tests/message-router.test.ts`, `frontend/tests/` | `npm test -- --runInBand` | `test(frontend): add integration-style message flow tests` |
 | TEST-2.3 | ⬜ | 建立稳定性回归命令清单与执行顺序 | `README.md`, `WORKFLOW.md` | `npm test -- --runInBand` + `python -m pytest -q` | `docs(test): define phase2 stability regression checklist` |
-| AUD-2.1 | ⬜ | 引入 SQLAlchemy/Alembic 与 PostgreSQL 配置（主路径） | `backend/requirements.txt`, `backend/app/` | `python -m pytest -q` | `feat(audit): add sqlalchemy and alembic dependencies` |
+| AUD-2.1 | ✅ | 引入 SQLAlchemy/Alembic 与 PostgreSQL 配置（主路径） | `backend/requirements.txt`, `backend/app/` | `python -m pytest -q` | `feat(audit): add sqlalchemy and alembic dependencies` |
 | AUD-2.2 | ⬜ | 审计表模型 + Alembic 迁移脚本 | `backend/app/models/`, `backend/migrations/`, `backend/alembic.ini` | `python -m pytest -q` | `feat(database): add audit schema and alembic migration` |
 | AUD-2.3 | ⬜ | 审计写入链路改造：DB 主写 + JSONL 备份 | `backend/app/agents/audit_agent.py` | `python -m pytest -q` | `feat(audit): switch to db-primary with jsonl backup` |
 | AUD-2.4 | ⬜ | `/audit/recent` 改为 DB 读并保留降级路径 | `backend/app/main.py`, `backend/app/orchestration/workflow.py` | `python -m pytest -q` | `feat(api): serve recent audits from database` |
