@@ -22,6 +22,6 @@
   },
   "options_page": "options.html",
   "side_panel": {
-    "default_path": "audit.html"
+    "default_path": "sidepanel.html"
   }
 }

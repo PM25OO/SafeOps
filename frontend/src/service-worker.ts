@@ -19,7 +19,7 @@ import {
 
 const router = new MessageRouter();
 const EXTENSION_CONTEXT_INVALIDATED_ERROR = "Extension context invalidated.";
-const DEFAULT_SIDE_PANEL_PATH = "audit.html";
+const DEFAULT_SIDE_PANEL_PATH = "sidepanel.html";
 const BACKEND_REQUEST_TIMEOUT_MS = 8000;
 const BACKEND_MAX_RETRIES = 1;
 const BACKEND_RETRY_DELAY_MS = 250;

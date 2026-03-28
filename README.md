@@ -21,7 +21,7 @@ SafeOps AI 是一个以浏览器插件为入口的安全运维辅助系统：
 - ✅ Popup：全局开关、连接状态、今日统计、快捷入口
 - ✅ Options：后端地址、动作白名单、DOM规则JSON导入
 - ✅ Floating Ball：高危高亮、呼吸灯、拖拽贴边、单击切换监听、摘要提示框
-- 🟡 SidePanel：已支持悬浮球 hover 分裂按钮触发，轻量只读页继续在 Phase 2 完善
+- 🟡 SidePanel：已支持悬浮球 hover 分裂按钮触发；轻量只读骨架页已回归，可查看最近上下文与 AI 摘要概览（详细交互继续在 Phase 2 完善）
 - ✅ Backend Request Resilience：前端调用后端已统一超时、重试与错误码输出
 - ✅ 状态提示一致化：Popup/Options/悬浮球失败提示已统一中文口径
 - ✅ Backend：`/analyze`、`/health`、`/health/llm`、`/audit/recent`
@@ -35,7 +35,7 @@ SafeOps AI 是一个以浏览器插件为入口的安全运维辅助系统：
 Chrome Extension (MV3)
   ├─ content-script.ts      页面解析 + 悬浮球 + 触发分析
   ├─ service-worker.ts      消息路由 + 存储 + 后端调用
-  ├─ popup/options/audit
+  ├─ popup/options/sidepanel/audit
   └─ dist/                  可加载的插件产物
 
 FastAPI + LangGraph

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SafeOps SidePanel</title>
+    <link rel="stylesheet" href="ui.css" />
+  </head>
+  <body>
+    <div class="card">
+      <div class="row header-between">
+        <div class="brand-row">
+          <img src="logo.svg" alt="SafeOps Logo" class="brand-logo" />
+          <h1>SafeOps 轻量面板</h1>
+        </div>
+        <button id="sp-refresh">刷新</button>
+      </div>
+      <p class="small">只读信息面板：用于快速查看最近上下文与分析摘要（详细交互后续阶段补全）。</p>
+      <p class="small">最后同步：<span id="sp-last-sync">-</span></p>
+    </div>
+
+    <div class="card">
+      <h2>最新上下文</h2>
+      <p id="sp-context-title" class="small">暂无上下文数据。</p>
+      <pre id="sp-context-json">{}</pre>
+    </div>
+
+    <div class="card">
+      <h2>AI 摘要</h2>
+      <div class="kv">
+        <span>建议</span>
+        <strong id="sp-rec">-</strong>
+      </div>
+      <div class="kv">
+        <span>风险分</span>
+        <strong id="sp-risk">-</strong>
+      </div>
+      <div class="kv">
+        <span>动作</span>
+        <strong id="sp-actions">-</strong>
+      </div>
+      <p id="sp-ai-summary" class="small">暂无 AI 摘要。</p>
+    </div>
+
+    <script src="sidepanel.js"></script>
+  </body>
+</html>
