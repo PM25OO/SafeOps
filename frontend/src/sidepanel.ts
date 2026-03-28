@@ -71,18 +71,35 @@ function renderAnalysis(analysis: unknown): void {
 }
 
 async function refreshSidePanel(): Promise<void> {
-  const { context, analysis } = await loadLatestPanelData();
-  renderContext(context);
-  renderAnalysis(analysis);
-  getEl<HTMLElement>("sp-last-sync").textContent = new Date().toLocaleString("zh-CN", {
-    hour12: false,
-  });
+  try {
+    const { context, analysis } = await loadLatestPanelData();
+    renderContext(context);
+    renderAnalysis(analysis);
+    getEl<HTMLElement>("sp-last-sync").textContent = new Date().toLocaleString("zh-CN", {
+      hour12: false,
+    });
+  } catch (error) {
+    console.error("Failed to refresh sidepanel:", error);
+  }
 }
 
 async function initSidePanel(): Promise<void> {
   getEl<HTMLButtonElement>("sp-refresh").addEventListener("click", () => {
     void refreshSidePanel();
   });
+
+  // Monitor storage changes to auto-refresh when new analysis arrives
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === "local") {
+      const hasLatestContextChange = "latestContext" in changes;
+      const hasLatestAnalysisChange = "latestAnalysis" in changes;
+
+      if (hasLatestContextChange || hasLatestAnalysisChange) {
+        void refreshSidePanel();
+      }
+    }
+  });
+
   await refreshSidePanel();
 }
 
