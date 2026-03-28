@@ -76,7 +76,7 @@
 | AUD-2.4 | ⬜ | `/audit/recent` 改为 DB 读并保留降级路径 | `backend/app/main.py`, `backend/app/orchestration/workflow.py` | `python -m pytest -q` | `feat(api): serve recent audits from database` |
 | OPS-2.1 | ⬜ | 后端 Docker 镜像化（FastAPI + 依赖） | `backend/Dockerfile`, `backend/.dockerignore` | `docker build`（backend） | `build(backend): containerize fastapi service` |
 | OPS-2.2 | ⬜ | docker-compose 接入 backend 服务并联通 pg/redis/opa | `docker-compose.dev.yml` | `docker compose -f docker-compose.dev.yml up -d` | `chore(devops): wire backend service in docker compose` |
-| DOC-2.1 | ⬜ | 文档与实现一致性修正（含 SidePanel 新定位） | `README.md`, `DELIVERY_OVERVIEW.md`, `PHASE2_TASKS.md` | 文档自检 + 构建/测试抽查 | `docs(phase2): align docs with stabilized architecture` |
+| DOC-2.1 | ✅ | 文档与实现一致性修正（含 SidePanel 新定位） | `README.md`, `DELIVERY_OVERVIEW.md`, `PHASE2_TASKS.md` | 文档自检 + 构建/测试抽查 | `docs(phase2): align docs with stabilized architecture` |
 
 ---
 
