@@ -308,3 +308,80 @@ element.style.pointerEvents = "auto";
 - ❌ 不要猜测 CSS 或 API 行为，要验证
 - ❌ 不要依赖"看起来应该工作"就认为它工作
 - ✅ 显式验证关键路径上的每个假设
+
+---
+
+## 12. Phase 2 稳定性回归清单
+
+> 文档归属：TEST-2.3（建立稳定性回归命令清单与执行顺序）  
+> 目标：确保每次改动都通过完整的稳定性验证链  
+> 首次生成日期：2026-03-28
+
+### 前置条件
+
+- 本地已克隆最新代码、工作区无未提交改动（`git status` 干净）
+- Python 3.10+ 与 Node.js 18+ 已安装
+
+### 标准验证流程
+
+#### 步骤 1：后端测试（backend/）
+
+```bash
+cd backend
+pip install -r requirements.txt
+python -m pytest -q
+```
+
+**期望结果**：报告类似 `11 passed, 1 warning` 或更优，无 `FAILED` 或 `ERROR`。
+
+#### 步骤 2：前端测试（frontend/）
+
+```bash
+cd frontend
+npm install
+npm test -- --runInBand
+```
+
+**期望结果**：
+```
+Test Suites: 4 passed, 4 total
+Tests: 14+ passed
+```
+
+无挂起、超时或失败。
+
+#### 步骤 3：前端构建（frontend/）
+
+```bash
+npm run build
+```
+
+**期望结果**：
+- 输出 `[build] extension bundle generated at dist/`
+- `dist/` 包含所有必需文件：`service-worker.js`、`sidepanel.js`、`audit.js`、`popup.js`、`options.js`、`content-script.js`、`manifest.json`、HTML 文件、`ui.css`、`logo.svg`
+- 无 esbuild 错误
+
+#### 步骤 4：插件加载验证（可选/手工）
+
+1. 打开 `chrome://extensions/`
+2. 开启"开发者模式"
+3. 点击"加载已解压的扩展程序"，选择 `frontend/dist`
+4. 检查插件是否正常加载（无红色错误）
+5. 在任意网页右键点击插件图标，验证能否打开 Popup / Options / SidePanel（通过 hover 悬浮球）
+
+### 回归检查清单
+
+| 检查项 | 验证方法 | 通过标准 |
+|---|---|---|
+| 后端 API 健康 | Step 1 pytest | 无失败用例 |
+| 前端单元测试 | Step 2 jest | 所有套件 pass |
+| 前端构建 | Step 3 npm run build | 无 esbuild 错误，4 个完整 JS 包 |
+| Service Worker 消息路由 | 单元测试 pass，支持 `PING` | 无挂起、能处理同步 API 调用 |
+| SidePanel 显示 | 插件加载后 hover 悬浮球 | 能打开 sidepanel，显示"最新上下文"与"AI 摘要" |
+| 审计持久化 | 触发分析后查询后端 `/audit/recent` | 能返回记录，格式与协议一致 |
+
+### 推荐执行频率
+
+- 开发中每个原子提交后：执行步骤 1-3
+- PR 或合并前：完整执行步骤 1-4
+- CI/CD 自动化：至少步骤 1-3
